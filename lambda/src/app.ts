@@ -1,34 +1,34 @@
-import { S3Event } from 'aws-lambda';
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { S3Service } from './services/s3.service';
 import { PDFConversionService } from './services/pdf-conversion.service';
 import { FileUtils } from './utils/file.utils';
 
 /**
  * Handles S3 events for image conversion from RGB to CMYK PDF
- * @param {S3Event} event - S3 Event containing information about the uploaded file
- * @returns {Object} API Gateway Lambda Proxy Output Format
+ * @param {APIGatewayProxyEvent} event - API Gateway Proxy Event containing information about the uploaded file
+ * @returns {APIGatewayProxyResult} API Gateway Proxy Result Format
  */
-export const lambdaHandler = async (event: S3Event): Promise<{ statusCode: number; body: string }> => {
+export const lambdaHandler = async (
+    event: APIGatewayProxyEvent
+): Promise<APIGatewayProxyResult> => {
     try {
-        // Validate event
-        if (!event?.Records?.[0]?.s3) {
-            throw new Error('Invalid event structure');
-        }
+        // Parse input (assume JSON body with s3Path)
+        const body = event.body ? JSON.parse(event.body) : {};
+        const s3Path = body.s3Path as string;
 
-        // Extract S3 information
-        const bucket = event.Records[0].s3.bucket.name;
-        const key = decodeURIComponent(event.Records[0].s3.object.key.replace(/\+/g, ' '));
-
-        // Validate file type
-        if (!FileUtils.isValidRGBFile(key)) {
+        if (!s3Path || !FileUtils.isValidRGBFile(s3Path)) {
             return {
                 statusCode: 400,
                 body: JSON.stringify({
-                    message: 'Only RGB images are supported for conversion',
-                    error: 'INVALID_FILE_TYPE',
+                    message: 'Please provide a valid S3 path to an RGB image',
+                    error: 'INVALID_INPUT',
                 }),
             };
         }
+
+        // Use the bucket from env or default to the one created by SAM
+        const bucket = process.env.SOURCE_BUCKET || body.bucket || 'print-your-trip-source-us-east-1';
+        const key = s3Path;
 
         // Prepare output path
         const folderPath = FileUtils.getFolderPath(key);
@@ -51,15 +51,12 @@ export const lambdaHandler = async (event: S3Event): Promise<{ statusCode: numbe
                 outputKey,
             }),
         };
-    } catch (error: unknown) {
-        console.error('Error processing image:', error);
-        const errorObj = error as { statusCode?: number; message?: string; code?: string };
+    } catch (error: any) {
         return {
-            statusCode: errorObj.statusCode || 500,
+            statusCode: 500,
             body: JSON.stringify({
                 message: 'Error processing the image',
-                error: errorObj.message || 'Unknown error occurred',
-                errorCode: errorObj.code || 'UNKNOWN_ERROR',
+                error: error.message || 'Unknown error occurred',
             }),
         };
     }
