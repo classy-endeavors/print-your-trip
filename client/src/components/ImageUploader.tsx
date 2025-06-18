@@ -1,17 +1,17 @@
-import React, { useState, useRef } from 'react';
-import ReactCrop from 'react-image-crop';
-import type { Crop } from 'react-image-crop';
-import 'react-image-crop/dist/ReactCrop.css';
-import axios from 'axios';
+import React, { useState, useRef } from "react";
+import ReactCrop from "react-image-crop";
+import type { Crop } from "react-image-crop";
+import "react-image-crop/dist/ReactCrop.css";
+import axios from "axios";
 
 const ImageUploader: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [crop, setCrop] = useState<Crop>({
-    unit: 'px',
+    unit: "px",
     width: 1800,
     height: 1200,
     x: 0,
-    y: 0
+    y: 0,
   });
   const [croppedImage, setCroppedImage] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -29,16 +29,19 @@ const ImageUploader: React.FC = () => {
     }
   };
 
-  const getCroppedImg = (image: HTMLImageElement, crop: Crop): Promise<string> => {
-    const canvas = document.createElement('canvas');
+  const getCroppedImg = (
+    image: HTMLImageElement,
+    crop: Crop,
+  ): Promise<string> => {
+    const canvas = document.createElement("canvas");
     const scaleX = image.naturalWidth / image.width;
     const scaleY = image.naturalHeight / image.height;
     canvas.width = crop.width;
     canvas.height = crop.height;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
 
     if (!ctx) {
-      throw new Error('No 2d context');
+      throw new Error("No 2d context");
     }
 
     ctx.drawImage(
@@ -50,16 +53,16 @@ const ImageUploader: React.FC = () => {
       0,
       0,
       crop.width,
-      crop.height
+      crop.height,
     );
 
     return new Promise((resolve) => {
       canvas.toBlob((blob) => {
         if (!blob) {
-          throw new Error('Canvas is empty');
+          throw new Error("Canvas is empty");
         }
         resolve(URL.createObjectURL(blob));
-      }, 'image/jpeg');
+      }, "image/jpeg");
     });
   };
 
@@ -81,36 +84,31 @@ const ImageUploader: React.FC = () => {
 
       // Create form data
       const formData = new FormData();
-      formData.append('image', blob, 'image.jpg');
+      formData.append("image", blob, "image.jpg");
 
       // Upload to backend
-      const uploadResponse = await axios.post('/api/upload', formData, {
+      const uploadResponse = await axios.post("/api/upload", formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          "Content-Type": "multipart/form-data",
         },
       });
 
       setPdfUrl(uploadResponse.data.pdfUrl);
     } catch (error) {
-      console.error('Error uploading image:', error);
+      console.error("Error uploading image:", error);
     } finally {
       setIsUploading(false);
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-4">
+    <div className="mx-auto max-w-4xl p-4">
       <div className="mb-4">
         <input
           type="file"
           accept="image/*"
           onChange={handleImageUpload}
-          className="block w-full text-sm text-gray-500
-            file:mr-4 file:py-2 file:px-4
-            file:rounded-full file:border-0
-            file:text-sm file:font-semibold
-            file:bg-blue-50 file:text-blue-700
-            hover:file:bg-blue-100"
+          className="block w-full text-sm text-gray-500 file:mr-4 file:rounded-full file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100"
         />
       </div>
 
@@ -120,13 +118,13 @@ const ImageUploader: React.FC = () => {
             crop={crop}
             onChange={(c) => setCrop(c)}
             onComplete={handleCropComplete}
-            aspect={1800/1200}
+            aspect={1800 / 1200}
           >
             <img
               ref={imageRef}
               src={selectedImage}
               alt="Upload"
-              className="max-w-full h-auto"
+              className="h-auto max-w-full"
             />
           </ReactCrop>
         </div>
@@ -134,11 +132,11 @@ const ImageUploader: React.FC = () => {
 
       {croppedImage && (
         <div className="mb-4">
-          <h3 className="text-lg font-semibold mb-2">Preview:</h3>
+          <h3 className="mb-2 text-lg font-semibold">Preview:</h3>
           <img
             src={croppedImage}
             alt="Cropped"
-            className="max-w-full h-auto border border-gray-300"
+            className="h-auto max-w-full border border-gray-300"
           />
         </div>
       )}
@@ -146,13 +144,13 @@ const ImageUploader: React.FC = () => {
       <button
         onClick={handleSavePhoto}
         disabled={!croppedImage || isUploading}
-        className={`px-4 py-2 rounded-md text-white font-semibold ${
+        className={`rounded-md px-4 py-2 font-semibold text-white ${
           !croppedImage || isUploading
-            ? 'bg-gray-400 cursor-not-allowed'
-            : 'bg-blue-600 hover:bg-blue-700'
+            ? "cursor-not-allowed bg-gray-400"
+            : "bg-blue-600 hover:bg-blue-700"
         }`}
       >
-        {isUploading ? 'Uploading...' : 'Save Photo'}
+        {isUploading ? "Uploading..." : "Save Photo"}
       </button>
 
       {pdfUrl && (
@@ -160,7 +158,7 @@ const ImageUploader: React.FC = () => {
           <a
             href={pdfUrl}
             download
-            className="text-blue-600 hover:text-blue-800 underline"
+            className="text-blue-600 underline hover:text-blue-800"
           >
             Download CMYK PDF
           </a>
@@ -170,4 +168,4 @@ const ImageUploader: React.FC = () => {
   );
 };
 
-export default ImageUploader; 
+export default ImageUploader;
