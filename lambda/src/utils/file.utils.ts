@@ -16,4 +16,4 @@ export class FileUtils {
     static getCMYKFilename(rgbFilename: string): string {
         return rgbFilename.replace('-rgb.', '-cmyk.pdf');
     }
-} 
+}

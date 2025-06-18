@@ -23,10 +23,10 @@ export const lambdaHandler = async (event: S3Event): Promise<{ statusCode: numbe
         if (!FileUtils.isValidRGBFile(key)) {
             return {
                 statusCode: 400,
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     message: 'Only RGB images are supported for conversion',
-                    error: 'INVALID_FILE_TYPE'
-                })
+                    error: 'INVALID_FILE_TYPE',
+                }),
             };
         }
 
@@ -48,10 +48,9 @@ export const lambdaHandler = async (event: S3Event): Promise<{ statusCode: numbe
                 message: 'Successfully converted RGB image to CMYK PDF',
                 downloadUrl: publicUrl,
                 inputKey: key,
-                outputKey
-            })
+                outputKey,
+            }),
         };
-
     } catch (error: unknown) {
         console.error('Error processing image:', error);
         const errorObj = error as { statusCode?: number; message?: string; code?: string };
@@ -60,8 +59,8 @@ export const lambdaHandler = async (event: S3Event): Promise<{ statusCode: numbe
             body: JSON.stringify({
                 message: 'Error processing the image',
                 error: errorObj.message || 'Unknown error occurred',
-                errorCode: errorObj.code || 'UNKNOWN_ERROR'
-            })
+                errorCode: errorObj.code || 'UNKNOWN_ERROR',
+            }),
         };
     }
 };

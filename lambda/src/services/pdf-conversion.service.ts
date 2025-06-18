@@ -1,6 +1,5 @@
 import PDFDocument from 'pdfkit';
 import sharp from 'sharp';
-import { Readable } from 'stream';
 
 export class PDFConversionService {
     static async convertToCMYK(imageBuffer: Buffer): Promise<Buffer> {
