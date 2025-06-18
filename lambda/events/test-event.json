@@ -1,0 +1,8 @@
+{
+  "httpMethod": "POST",
+  "path": "/upload",
+  "headers": {
+    "content-type": "multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW"
+  },
+  "body": "LS0tLS0tV2ViS2l0Rm9ybUJvdW5kYXJ5N01BNFlXeGtUclp1MGdXCi0tLS0tV2ViS2l0Rm9ybUJvdW5kYXJ5N01BNFlXeGtUclp1MGdXLS0="
+}
