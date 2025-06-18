@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: Lambda function for Print Your Trip - API version
 
@@ -23,11 +23,21 @@ Resources:
       Architectures:
         - x86_64
       Events:
-        ApiEvent:
+        UploadEvent:
           Type: Api
           Properties:
-            Path: /
+            Path: /upload
             Method: post
+        ConvertEvent:
+          Type: Api
+          Properties:
+            Path: /convert
+            Method: post
+        OptionsEvent:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: options
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
@@ -36,3 +46,6 @@ Outputs:
   PDFConversionFunction:
     Description: PDF Conversion Lambda Function ARN
     Value: !GetAtt PDFConversionFunction.Arn
+  ApiGatewayUrl:
+    Description: API Gateway endpoint URL
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
