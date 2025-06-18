@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import ReactCrop from "react-image-crop";
 import type { Crop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
@@ -13,8 +13,8 @@ const ImageUploader: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [crop, setCrop] = useState<Crop>({
     unit: "px",
-    width: TARGET_WIDTH,
-    height: TARGET_HEIGHT,
+    width: 0,
+    height: 0,
     x: 0,
     y: 0,
   });
@@ -65,6 +65,7 @@ const ImageUploader: React.FC = () => {
       reader.onload = (e) => {
         setSelectedImage(e.target?.result as string);
         setIsImageLoaded(false);
+        setCroppedImage(null); // Reset cropped image when new image is loaded
       };
       reader.readAsDataURL(processedFile);
     } catch (error) {
@@ -75,42 +76,41 @@ const ImageUploader: React.FC = () => {
   const calculateInitialCrop = (
     displayWidth: number,
     displayHeight: number,
-    naturalWidth: number,
-    naturalHeight: number,
   ): Crop => {
-    const photoAspectRatio = naturalWidth / naturalHeight;
-    let width: number;
-    let height: number;
-    let x: number;
-    let y: number;
-
-    if (photoAspectRatio > TARGET_ASPECT_RATIO) {
-      // Image is wider than target ratio
-      height = displayHeight;
-      width = height * TARGET_ASPECT_RATIO;
-      x = (displayWidth - width) / 2;
-      y = 0;
+    // Calculate the maximum crop area that fits within the display 
+    // while maintaining the target aspect ratio (1.5)
+    const displayAR = displayWidth / displayHeight;
+    
+    let cropWidth: number;
+    let cropHeight: number;
+    
+    if (displayAR > TARGET_ASPECT_RATIO) {
+      // Display is wider than target ratio - height determines crop size
+      cropHeight = displayHeight;
+      cropWidth = cropHeight * TARGET_ASPECT_RATIO;
     } else {
-      // Image is taller than target ratio
-      width = displayWidth;
-      height = width / TARGET_ASPECT_RATIO;
-      x = 0;
-      y = (displayHeight - height) / 2;
+      // Display is taller/equal to target ratio - width determines crop size
+      cropWidth = displayWidth;
+      cropHeight = cropWidth / TARGET_ASPECT_RATIO;
     }
-
+    
+    // Center the crop area
+    const x = (displayWidth - cropWidth) / 2;
+    const y = (displayHeight - cropHeight) / 2;
+    
     return {
       unit: "px",
-      width,
-      height,
-      x,
-      y,
+      width: cropWidth,
+      height: cropHeight,
+      x: Math.max(0, x),
+      y: Math.max(0, y),
     };
   };
 
   const handleImageLoad = () => {
     if (imageRef.current) {
-      const { naturalWidth, naturalHeight, width: displayWidth, height: displayHeight } = imageRef.current;
-      const initialCrop = calculateInitialCrop(displayWidth, displayHeight, naturalWidth, naturalHeight);
+      const { width: displayWidth, height: displayHeight } = imageRef.current;
+      const initialCrop = calculateInitialCrop(displayWidth, displayHeight);
       setCrop(initialCrop);
       setIsImageLoaded(true);
     }
@@ -121,58 +121,60 @@ const ImageUploader: React.FC = () => {
     crop: Crop,
   ): Promise<string> => {
     return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.src = image.src;
-      
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        canvas.width = TARGET_WIDTH;
-        canvas.height = TARGET_HEIGHT;
-        const ctx = canvas.getContext("2d");
+      if (!crop.width || !crop.height) {
+        reject(new Error("Invalid crop dimensions"));
+        return;
+      }
 
-        if (!ctx) {
-          reject(new Error("No 2d context"));
-          return;
-        }
+      const canvas = document.createElement("canvas");
+      canvas.width = TARGET_WIDTH;
+      canvas.height = TARGET_HEIGHT;
+      const ctx = canvas.getContext("2d");
 
-        // Calculate scaling factors between displayed and natural dimensions
-        const scaleX = img.naturalWidth / image.width;
-        const scaleY = img.naturalHeight / image.height;
+      if (!ctx) {
+        reject(new Error("No 2d context"));
+        return;
+      }
 
-        // Draw the cropped image at the target size
-        ctx.drawImage(
-          img,
-          crop.x * scaleX,
-          crop.y * scaleY,
-          crop.width * scaleX,
-          crop.height * scaleY,
-          0,
-          0,
-          TARGET_WIDTH,
-          TARGET_HEIGHT
-        );
+      // Calculate scaling factors between displayed and natural dimensions
+      const scaleX = image.naturalWidth / image.width;
+      const scaleY = image.naturalHeight / image.height;
 
-        canvas.toBlob(
-          (blob) => {
-            if (!blob) {
-              reject(new Error("Canvas is empty"));
-              return;
-            }
-            resolve(URL.createObjectURL(blob));
-          },
-          "image/jpeg",
-          0.95,
-        );
-      };
+      // Calculate the source coordinates in the original image
+      const sourceX = crop.x * scaleX;
+      const sourceY = crop.y * scaleY;
+      const sourceWidth = crop.width * scaleX;
+      const sourceHeight = crop.height * scaleY;
 
-      img.onerror = () => {
-        reject(new Error("Failed to load image"));
-      };
+      // Draw the cropped image at the target size
+      ctx.drawImage(
+        image,
+        sourceX,
+        sourceY,
+        sourceWidth,
+        sourceHeight,
+        0,
+        0,
+        TARGET_WIDTH,
+        TARGET_HEIGHT
+      );
+
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error("Canvas is empty"));
+            return;
+          }
+          resolve(URL.createObjectURL(blob));
+        },
+        "image/jpeg",
+        0.95,
+      );
     });
   };
 
   const handleCropComplete = async () => {
-    if (imageRef.current && crop && isImageLoaded) {
+    if (imageRef.current && crop && isImageLoaded && crop.width && crop.height) {
       try {
         const croppedImageUrl = await getCroppedImg(imageRef.current, crop);
         setCroppedImage(croppedImageUrl);
@@ -212,7 +214,7 @@ const ImageUploader: React.FC = () => {
       <div className="mb-4">
         <input
           type="file"
-          accept="image/*"
+          accept="image/*,.heic,.HEIC"
           onChange={handleImageUpload}
           className="block w-full text-sm text-gray-500 file:mr-4 file:rounded-full file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100"
         />
@@ -240,7 +242,9 @@ const ImageUploader: React.FC = () => {
 
       {croppedImage && (
         <div className="mb-4">
-          <h3 className="mb-2 text-lg font-semibold">Preview:</h3>
+          <h3 className="mb-2 text-lg font-semibold">
+            Preview (1800×1200px):
+          </h3>
           <img
             src={croppedImage}
             alt="Cropped"
