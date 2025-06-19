@@ -1,3 +1,4 @@
+import Footer from "./Footer";
 import Navbar from "./Navbar";
 import { Outlet } from "react-router-dom";
 
@@ -8,6 +9,7 @@ export default function Layout() {
       <div className="font-quicksand">
         <Outlet />
       </div>
+      <Footer />
     </div>
   );
 }
