@@ -48,7 +48,7 @@ const ImageUploader: React.FC = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    console.log('Selected file:', file);
+    console.log("Selected file:", file);
     try {
       setError(null);
       let processedFile = file;
@@ -61,7 +61,9 @@ const ImageUploader: React.FC = () => {
         try {
           processedFile = await convertHeicToJpeg(file);
         } catch {
-          setError("Failed to convert HEIC image. Please try a different file or use a JPEG/PNG.");
+          setError(
+            "Failed to convert HEIC image. Please try a different file or use a JPEG/PNG.",
+          );
           return;
         }
       }
@@ -119,8 +121,18 @@ const ImageUploader: React.FC = () => {
 
   const handleImageLoad = () => {
     if (imageRef.current) {
-      const { naturalWidth, naturalHeight, width: displayWidth, height: displayHeight } = imageRef.current;
-      const initialCrop = calculateInitialCrop(displayWidth, displayHeight, naturalWidth, naturalHeight);
+      const {
+        naturalWidth,
+        naturalHeight,
+        width: displayWidth,
+        height: displayHeight,
+      } = imageRef.current;
+      const initialCrop = calculateInitialCrop(
+        displayWidth,
+        displayHeight,
+        naturalWidth,
+        naturalHeight,
+      );
       setCrop(initialCrop);
       setIsImageLoaded(true);
     }
@@ -133,7 +145,7 @@ const ImageUploader: React.FC = () => {
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.src = image.src;
-      
+
       img.onload = () => {
         const canvas = document.createElement("canvas");
         canvas.width = TARGET_WIDTH;
@@ -159,7 +171,7 @@ const ImageUploader: React.FC = () => {
           0,
           0,
           TARGET_WIDTH,
-          TARGET_HEIGHT
+          TARGET_HEIGHT,
         );
 
         canvas.toBlob(
@@ -196,37 +208,37 @@ const ImageUploader: React.FC = () => {
   const handleSavePhoto = async () => {
     if (!croppedImage) return;
 
-    console.log('=== SAVE PHOTO START ===');
-    console.log('Cropped image URL:', croppedImage);
-    
+    console.log("=== SAVE PHOTO START ===");
+    console.log("Cropped image URL:", croppedImage);
+
     setIsUploading(true);
     setError(null);
     try {
-      console.log('Fetching cropped image blob...');
+      console.log("Fetching cropped image blob...");
       const response = await fetch(croppedImage);
       const blob = await response.blob();
-      console.log('Blob size:', blob.size, 'Blob type:', blob.type);
+      console.log("Blob size:", blob.size, "Blob type:", blob.type);
 
       const formData = new FormData();
       formData.append("image", blob, "image.jpg");
-      console.log('FormData created with image');
+      console.log("FormData created with image");
 
-      console.log('Making upload request to /api/upload...');
+      console.log("Making upload request to /api/upload...");
       const uploadResponse = await axios.post("/api/upload", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
 
-      console.log('Upload response:', uploadResponse.data);
+      console.log("Upload response:", uploadResponse.data);
       setUploadedS3Path(uploadResponse.data.s3Path);
-      console.log('=== SAVE PHOTO SUCCESS ===');
+      console.log("=== SAVE PHOTO SUCCESS ===");
     } catch (error) {
-      console.error('=== SAVE PHOTO ERROR ===');
-      console.error('Error details:', error);
+      console.error("=== SAVE PHOTO ERROR ===");
+      console.error("Error details:", error);
       if (axios.isAxiosError(error)) {
-        console.error('Axios error response:', error.response?.data);
-        console.error('Axios error status:', error.response?.status);
+        console.error("Axios error response:", error.response?.data);
+        console.error("Axios error status:", error.response?.status);
       }
       setError("Error uploading image. Please try again.");
     } finally {
@@ -237,26 +249,26 @@ const ImageUploader: React.FC = () => {
   const handleExportPDF = async () => {
     if (!uploadedS3Path) return;
 
-    console.log('=== EXPORT PDF START ===');
-    console.log('Uploaded S3 path:', uploadedS3Path);
-    
+    console.log("=== EXPORT PDF START ===");
+    console.log("Uploaded S3 path:", uploadedS3Path);
+
     setIsConverting(true);
     setError(null);
     try {
-      console.log('Making convert request to /api/convert...');
+      console.log("Making convert request to /api/convert...");
       const response = await axios.post("/api/convert", {
         s3Path: uploadedS3Path,
       });
 
-      console.log('Convert response:', response.data);
+      console.log("Convert response:", response.data);
       setPdfUrl(response.data.downloadUrl);
-      console.log('=== EXPORT PDF SUCCESS ===');
+      console.log("=== EXPORT PDF SUCCESS ===");
     } catch (error) {
-      console.error('=== EXPORT PDF ERROR ===');
-      console.error('Error details:', error);
+      console.error("=== EXPORT PDF ERROR ===");
+      console.error("Error details:", error);
       if (axios.isAxiosError(error)) {
-        console.error('Axios error response:', error.response?.data);
-        console.error('Axios error status:', error.response?.status);
+        console.error("Axios error response:", error.response?.data);
+        console.error("Axios error status:", error.response?.status);
       }
       setError("Error converting to PDF. Please try again.");
     } finally {
@@ -268,13 +280,26 @@ const ImageUploader: React.FC = () => {
     <div className="mx-auto max-w-4xl p-4 sm:p-6">
       {/* Mobile-optimized file upload area */}
       <div className="mb-6">
-        <label className="block w-full cursor-pointer rounded-lg border-2 border-dashed border-gray-300   p-6 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors">
+        <label className="block w-full cursor-pointer rounded-lg border-2 border-dashed border-gray-300 p-6 text-center transition-colors hover:border-blue-400 hover:bg-blue-50">
           <div className="flex flex-col items-center space-y-2">
-            <svg className="h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-              <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <svg
+              className="h-12 w-12 text-gray-400"
+              stroke="currentColor"
+              fill="none"
+              viewBox="0 0 48 48"
+            >
+              <path
+                d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
             <div className="text-sm text-gray-600">
-              <span className="font-medium text-blue-600 hover:text-blue-500">Tap to upload</span> or drag and drop
+              <span className="font-medium text-blue-600 hover:text-blue-500">
+                Tap to upload
+              </span>{" "}
+              or drag and drop
             </div>
             <p className="text-xs text-gray-500">HEIC, JPEG, PNG up to 10MB</p>
           </div>
@@ -288,10 +313,18 @@ const ImageUploader: React.FC = () => {
       </div>
 
       {error && (
-        <div className="mb-6 rounded-lg bg-red-50 border border-red-200 p-4">
+        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4">
           <div className="flex">
-            <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            <svg
+              className="h-5 w-5 text-red-400"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                clipRule="evenodd"
+              />
             </svg>
             <div className="ml-3">
               <p className="text-sm text-red-700">{error}</p>
@@ -302,7 +335,9 @@ const ImageUploader: React.FC = () => {
 
       {selectedImage && (
         <div className="mb-6">
-          <h3 className="mb-4 text-lg font-semibold text-gray-900">Crop your photo</h3>
+          <h3 className="mb-4 text-lg font-semibold text-gray-900">
+            Crop your photo
+          </h3>
           <div className="relative overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
             <ReactCrop
               crop={crop}
@@ -321,21 +356,22 @@ const ImageUploader: React.FC = () => {
               />
             </ReactCrop>
           </div>
-          <p className="mt-2 text-sm text-gray-600">Drag to adjust the crop area. The image will be resized to 1800×1200 pixels.</p>
+          <p className="mt-2 text-sm text-gray-600">
+            Drag to adjust the crop area. The image will be resized to 1800×1200
+            pixels.
+          </p>
         </div>
       )}
 
       {croppedImage && (
         <div className="mb-6">
           <h3 className="mb-4 text-lg font-semibold text-gray-900">Preview</h3>
-          <div className="overflow-hidden rounded-lg border border-gray-200  ">
-            <img
-              src={croppedImage}
-              alt="Cropped"
-              className="h-auto w-full"
-            />
+          <div className="overflow-hidden rounded-lg border border-gray-200">
+            <img src={croppedImage} alt="Cropped" className="h-auto w-full" />
           </div>
-          <p className="mt-2 text-sm text-gray-600">This is how your postcard will look when printed.</p>
+          <p className="mt-2 text-sm text-gray-600">
+            This is how your postcard will look when printed.
+          </p>
         </div>
       )}
 
@@ -352,9 +388,25 @@ const ImageUploader: React.FC = () => {
         >
           {isUploading ? (
             <div className="flex items-center justify-center">
-              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              <svg
+                className="mr-3 -ml-1 h-5 w-5 animate-spin text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
               </svg>
               Uploading...
             </div>
@@ -375,9 +427,25 @@ const ImageUploader: React.FC = () => {
           >
             {isConverting ? (
               <div className="flex items-center justify-center">
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <svg
+                  className="mr-3 -ml-1 h-5 w-5 animate-spin text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
                 </svg>
                 Converting...
               </div>
@@ -389,24 +457,48 @@ const ImageUploader: React.FC = () => {
       </div>
 
       {pdfUrl && (
-        <div className="mt-6 rounded-lg bg-green-50 border border-green-200 p-6">
+        <div className="mt-6 rounded-lg border border-green-200 bg-green-50 p-6">
           <div className="flex items-center">
-            <svg className="h-6 w-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              className="h-6 w-6 text-green-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             <div className="ml-3">
-              <h3 className="text-lg font-semibold text-green-800">PDF Ready!</h3>
-              <p className="text-sm text-green-700">Your CMYK PDF is ready for download.</p>
+              <h3 className="text-lg font-semibold text-green-800">
+                PDF Ready!
+              </h3>
+              <p className="text-sm text-green-700">
+                Your CMYK PDF is ready for download.
+              </p>
             </div>
           </div>
           <div className="mt-4">
             <a
               href={pdfUrl}
               download
-              className="inline-flex items-center rounded-lg bg-green-600 px-6 py-3 text-base font-semibold text-white shadow-sm hover:bg-green-700 active:bg-green-800 transition-colors"
+              className="inline-flex items-center rounded-lg bg-green-600 px-6 py-3 text-base font-semibold text-white shadow-sm transition-colors hover:bg-green-700 active:bg-green-800"
             >
-              <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              <svg
+                className="mr-2 h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
               </svg>
               Download CMYK PDF
             </a>

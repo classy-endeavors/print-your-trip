@@ -6,7 +6,7 @@ import Button from "./Button";
 export const MenuItem = ({
   item,
   to,
-  onClick
+  onClick,
 }: {
   item: string;
   to: string;
@@ -16,7 +16,7 @@ export const MenuItem = ({
     <div className="relative">
       <Link
         to={to}
-        className="cursor-pointer text-black hover:opacity-[0.9] text-lg md:text-base"
+        className="cursor-pointer text-lg text-black hover:opacity-[0.9] md:text-base"
         onClick={onClick}
       >
         {item}
@@ -27,13 +27,15 @@ export const MenuItem = ({
 
 export const Menu = ({
   children,
-  className = ""
+  className = "",
 }: {
   children: React.ReactNode;
   className?: string;
 }) => {
   return (
-    <nav className={`flex justify-center space-x-4 ${className}`}>{children}</nav>
+    <nav className={`flex justify-center space-x-4 ${className}`}>
+      {children}
+    </nav>
   );
 };
 
@@ -55,15 +57,19 @@ const Navbar = () => {
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 120, damping: 12 }}
-      className="absolute top-6 left-1/2 -translate-x-1/2 z-50 px-4 md:px-8 py-3 bg-background/90 shadow-lg rounded-full border border-gray-200 backdrop-blur flex items-center justify-between font-league-spartan w-[95vw] max-w-2xl"
+      className="absolute top-6 left-1/2 z-50 flex w-[95vw] max-w-2xl -translate-x-1/2 items-center justify-between rounded-full border border-gray-200 bg-background/90 px-4 py-3 font-league-spartan shadow-lg backdrop-blur md:px-8"
     >
       {/* Desktop Menu */}
-      <div className="hidden md:flex w-full justify-center">
-        <Menu>{navItems.map((item) => <MenuItem key={item.to} item={item.label} to={item.to} />)}</Menu>
+      <div className="hidden w-full justify-center md:flex">
+        <Menu>
+          {navItems.map((item) => (
+            <MenuItem key={item.to} item={item.label} to={item.to} />
+          ))}
+        </Menu>
       </div>
       {/* Mobile Hamburger */}
-      <div className="flex md:hidden w-full justify-between items-center">
-        <span className="font-bold text-lg">Menu</span>
+      <div className="flex w-full items-center justify-between md:hidden">
+        <span className="text-lg font-bold">Menu</span>
         <button
           className="p-2 focus:outline-none"
           onClick={() => setMobileOpen((open) => !open)}
@@ -77,9 +83,19 @@ const Navbar = () => {
             xmlns="http://www.w3.org/2000/svg"
           >
             {mobileOpen ? (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             ) : (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 8h16M4 16h16"
+              />
             )}
           </svg>
         </button>
@@ -92,7 +108,7 @@ const Navbar = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ type: "spring", stiffness: 120, damping: 14 }}
-            className="absolute top-14 left-1/2 -translate-x-1/2 w-[90vw] max-w-xs bg-background shadow-xl rounded-2xl border border-gray-200  p-6 flex flex-col items-center space-y-4 md:hidden"
+            className="absolute top-14 left-1/2 flex w-[90vw] max-w-xs -translate-x-1/2 flex-col items-center space-y-4 rounded-2xl border border-gray-200 bg-background p-6 shadow-xl md:hidden"
           >
             {navItems.map((item) => (
               <MenuItem
@@ -102,9 +118,7 @@ const Navbar = () => {
                 onClick={() => setMobileOpen(false)}
               />
             ))}
-            <Button>
-              Create My Postcard
-            </Button>
+            <Button>Create My Postcard</Button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -112,4 +126,4 @@ const Navbar = () => {
   );
 };
 
-export default Navbar; 
+export default Navbar;
