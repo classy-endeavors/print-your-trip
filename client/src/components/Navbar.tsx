@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Link } from "react-router-dom";
 import Button from "./Button";
+import logoFull from "../assets/logo-full.png";
 
 export const MenuItem = ({
   item,
@@ -57,7 +58,7 @@ const Navbar = () => {
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 120, damping: 12 }}
-      className="absolute top-6 left-1/2 z-50 flex w-[95vw] max-w-2xl -translate-x-1/2 items-center justify-between rounded-full border border-gray-200 bg-background/90 px-4 py-3 font-league-spartan shadow-lg backdrop-blur md:px-8"
+      className="absolute top-6 left-1/2 z-50 flex w-[95vw] max-w-2xl -translate-x-1/2 items-center justify-between rounded-full bg-background/90 px-4 py-3 font-league-spartan shadow-lg backdrop-blur md:px-8"
     >
       {/* Desktop Menu */}
       <div className="hidden w-full justify-center md:flex">
@@ -69,7 +70,7 @@ const Navbar = () => {
       </div>
       {/* Mobile Hamburger */}
       <div className="flex w-full items-center justify-between md:hidden">
-        <span className="text-lg font-bold">Menu</span>
+        <img className="max-w-30" src={logoFull} alt="logo" />
         <button
           className="p-2 focus:outline-none"
           onClick={() => setMobileOpen((open) => !open)}
@@ -108,7 +109,7 @@ const Navbar = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ type: "spring", stiffness: 120, damping: 14 }}
-            className="absolute top-14 left-1/2 flex w-[90vw] max-w-xs -translate-x-1/2 flex-col items-center space-y-4 rounded-2xl border border-gray-200 bg-background p-6 shadow-xl md:hidden"
+            className="absolute top-14 left-1/2 flex w-[90vw] max-w-xs -translate-x-1/2 flex-col items-center space-y-4 rounded-2xl bg-background p-6 shadow-xl md:hidden"
           >
             {navItems.map((item) => (
               <MenuItem

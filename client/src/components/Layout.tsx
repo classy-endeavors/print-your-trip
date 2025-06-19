@@ -6,7 +6,7 @@ export default function Layout() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="font-quicksand">
+      <div className="pt-30 font-quicksand">
         <Outlet />
       </div>
       <Footer />
