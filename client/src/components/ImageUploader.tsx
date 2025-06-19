@@ -268,7 +268,7 @@ const ImageUploader: React.FC = () => {
     <div className="mx-auto max-w-4xl p-4 sm:p-6">
       {/* Mobile-optimized file upload area */}
       <div className="mb-6">
-        <label className="block w-full cursor-pointer rounded-lg border-2 border-dashed border-gray-300 bg-white p-6 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors">
+        <label className="block w-full cursor-pointer rounded-lg border-2 border-dashed border-gray-300   p-6 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors">
           <div className="flex flex-col items-center space-y-2">
             <svg className="h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
               <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -328,7 +328,7 @@ const ImageUploader: React.FC = () => {
       {croppedImage && (
         <div className="mb-6">
           <h3 className="mb-4 text-lg font-semibold text-gray-900">Preview</h3>
-          <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+          <div className="overflow-hidden rounded-lg border border-gray-200  ">
             <img
               src={croppedImage}
               alt="Cropped"

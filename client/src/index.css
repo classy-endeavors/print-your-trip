@@ -1,1 +1,12 @@
+@import url('https://fonts.googleapis.com/css2?family=League+Spartan:wght@100..900&family=Quicksand:wght@300..700&display=swap');
 @import "tailwindcss";
+
+@theme {
+    --font-league-spartan:"League Spartan", sans-serif;
+    --font-quicksand: "Quicksand", sans-serif;
+
+    --color-background: #FFFCF2;
+    --color-background-hero: #F6F2E7;
+    --color-alice-blue: #EEF1E7;
+    --color-button-green:#648A65;
+}
