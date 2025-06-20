@@ -31,7 +31,7 @@ const ImageUploader: React.FC = () => {
   const imageRef = useRef<HTMLImageElement>(null);
 
   const API_URL = import.meta.env.VITE_API_URL;
-  console.log(API_URL)
+  console.log(API_URL);
 
   const handleImageUpload = async (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -125,11 +125,15 @@ const ImageUploader: React.FC = () => {
       console.log("FormData created with image");
 
       console.log("Making upload request to /api/upload...");
-      const uploadResponse = await axios.post(`${API_URL + '/upload'}`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
+      const uploadResponse = await axios.post(
+        `${API_URL + "/upload"}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
         },
-      });
+      );
 
       console.log("Upload response:", uploadResponse.data);
       setUploadedS3Path(uploadResponse.data.s3Path);
@@ -157,12 +161,12 @@ const ImageUploader: React.FC = () => {
     setError(null);
     try {
       console.log("Making convert request to /api/convert...");
-      const response = await axios.post(`${API_URL + '/convert'}`, {
+      const response = await axios.post(`${API_URL + "/convert"}`, {
         s3Path: uploadedS3Path,
       });
 
       console.log("Convert response:", response.data);
-      setPdfUrl(response.data.downloadUrl);
+      setPdfUrl(response.data.pdfDownloadUrl);
       console.log("=== EXPORT PDF SUCCESS ===");
     } catch (error) {
       console.error("=== EXPORT PDF ERROR ===");
@@ -383,10 +387,26 @@ const ImageUploader: React.FC = () => {
             </div>
           </div>
           <div className="mt-4">
-            <a
-              href={pdfUrl}
-              download
+            <button
+              onClick={async () => {
+                if (!pdfUrl) return;
+                try {
+                  const response = await fetch(pdfUrl);
+                  const blob = await response.blob();
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = "postcard.pdf";
+                  document.body.appendChild(a);
+                  a.click();
+                  a.remove();
+                  window.URL.revokeObjectURL(url);
+                } catch (e: unknown) {
+                  console.log("Failed to download PDF.", e);
+                }
+              }}
               className="inline-flex items-center rounded-lg bg-green-600 px-6 py-3 text-base font-semibold text-white shadow-sm transition-colors hover:bg-green-700 active:bg-green-800"
+              type="button"
             >
               <svg
                 className="mr-2 h-5 w-5"
@@ -402,7 +422,7 @@ const ImageUploader: React.FC = () => {
                 />
               </svg>
               Download CMYK PDF
-            </a>
+            </button>
           </div>
         </div>
       )}
