@@ -93,7 +93,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant }) => {
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 120, damping: 12 }}
-      className="absolute top-6 left-1/2 z-50 flex w-[95vw] max-w-2xl -translate-x-1/2 items-center justify-between rounded-full bg-background/90 px-4 py-3 font-league-spartan shadow-lg backdrop-blur md:px-8"
+      className="fixed top-6 left-1/2 z-50 flex w-[95vw] max-w-2xl -translate-x-1/2 items-center justify-between rounded-full bg-background/70 px-4 py-3 font-league-spartan shadow-lg backdrop-blur md:px-8"
     >
       {/* Desktop Menu */}
       <div className="hidden w-full justify-center md:flex">
