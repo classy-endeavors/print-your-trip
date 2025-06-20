@@ -1,7 +1,7 @@
 import Envelope1 from "./icons/Envelope1";
 import Facebook from "./icons/Facebook";
 import Instagram from "./icons/Instagram";
-import Tiktok from "./icons/TikTok";
+import Tiktok from "./icons/Tiktok";
 import logoFull from "../assets/logo-full.png";
 
 export default function Footer() {
