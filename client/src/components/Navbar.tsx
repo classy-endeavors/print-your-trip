@@ -63,27 +63,34 @@ const Navbar: React.FC<NavbarProps> = ({ variant }) => {
   const navigate = useNavigate();
 
   if (variant === "converter") {
-    // Converter Navbar design
     return (
-      <nav className="fixed z-50 w-full">
-        <div className="relative m-5 flex justify-between rounded-full p-5 shadow-md md:shadow-none">
-          <a href="/">
-            <ChevronLeft className="h-15 w-15 cursor-pointer rounded-full p-3 text-gray-600 md:shadow-2xl md:shadow-black" />
-          </a>
-          <div className="flex flex-1 flex-col items-center justify-center gap-2">
-            <img
-              className="mr-2 max-h-[3rem] max-w-[10rem]"
-              src={logoExt}
-              alt="logo-ext"
-            />
-            <img
-              className="max-w-[10rem]"
-              src={logoTagline}
-              alt="logo-tagline"
-            />
+      <AnimatePresence>
+        <motion.nav
+          className="fixed z-50 w-full bg-background"
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -30 }}
+          transition={{ type: "spring", stiffness: 120, damping: 16 }}
+        >
+          <div className="relative m-5 flex justify-between rounded-full p-2 shadow-md md:shadow-none">
+            <a href="/">
+              <ChevronLeft className="h-15 w-15 cursor-pointer rounded-full p-3 text-gray-600 md:shadow-2xl md:shadow-black" />
+            </a>
+            <div className="flex flex-1 flex-col items-center justify-center gap-2">
+              <img
+                className="mr-2 max-h-[3rem] max-w-[10rem]"
+                src={logoExt}
+                alt="logo-ext"
+              />
+              <img
+                className="max-w-[10rem]"
+                src={logoTagline}
+                alt="logo-tagline"
+              />
+            </div>
           </div>
-        </div>
-      </nav>
+        </motion.nav>
+      </AnimatePresence>
     );
   }
 

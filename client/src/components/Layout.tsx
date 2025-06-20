@@ -10,7 +10,7 @@ export default function Layout({
   return (
     <div className="min-h-screen bg-background">
       <Navbar variant={variant} />
-      <div className="pt-40 font-quicksand">
+      <div className="pt-30 font-quicksand">
         <Outlet />
       </div>
       {variant === "main" && <Footer />}
