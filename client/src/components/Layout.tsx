@@ -2,7 +2,11 @@ import Footer from "./Footer";
 import Navbar from "./Navbar";
 import { Outlet } from "react-router-dom";
 
-export default function Layout({ variant = "main" }: { variant?: "main" | "converter" }) {
+export default function Layout({
+  variant = "main",
+}: {
+  variant?: "main" | "converter";
+}) {
   return (
     <div className="min-h-screen bg-background">
       <Navbar variant={variant} />
