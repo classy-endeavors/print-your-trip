@@ -9,7 +9,7 @@ import TermsAndConditions from "./pages/TermsAndConditions";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import NotFound from "./pages/NotFound";
 import Layout from "./components/Layout";
-import ImageUploader from "./components/ImageUploader";
+import Create from "./pages/Create";
 
 function App() {
   return (
@@ -29,7 +29,7 @@ function App() {
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         </Route>
         <Route element={<Layout variant="converter" />}>
-          <Route path="/create" element={<ImageUploader />} />
+          <Route path="/create" element={<Create />} />
         </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>
