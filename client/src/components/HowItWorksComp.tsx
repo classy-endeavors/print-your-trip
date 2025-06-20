@@ -1,9 +1,11 @@
 import Button from "./Button";
 import heroImg from "../assets/hero-z-1.png";
 import postcardImg from "../assets/hero-z-0.jpg";
-import fridgeImg from "../assets/logo-full.png"; 
+import fridgeImg from "../assets/logo-full.png";
+import { useNavigate } from "react-router-dom";
 
 export default function HowItWorksComponent() {
+  const navigate = useNavigate();
   return (
     <>
       <header className="mt-6 mb-4 flex flex-col items-center justify-center p-4 text-center">
@@ -91,7 +93,7 @@ export default function HowItWorksComponent() {
         </div>
         {/* CTA Button */}
         <div className="mt-6 mb-4 flex w-full items-center justify-center">
-          <Button className="rounded-full px-8 py-3 text-lg">
+          <Button className="rounded-full px-8 py-3 text-lg" onClick={() => navigate("/create")}>
             Start Sending!
           </Button>
         </div>

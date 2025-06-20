@@ -2,8 +2,10 @@ import Button from "./Button";
 import heroZ0 from "../assets/hero-z-0.jpg";
 import heroZ1 from "../assets/hero-z-1.png";
 import bgVector1 from "../assets/bg-vector-1.png";
+import { useNavigate } from "react-router-dom";
 
 export default function HeroSection() {
+  const navigate = useNavigate();
   return (
     <div className="relative overflow-hidden rounded-b-[4rem] bg-background-hero p-7 pb-20">
       <div className="flex h-full flex-col justify-center gap-4">
@@ -16,7 +18,7 @@ export default function HeroSection() {
         <span className="font-light">
           Upload a photo, add a message & the address, and we'll do the rest.
         </span>
-        <Button className="w-fit text-lg font-medium">
+        <Button className="w-fit text-lg font-medium" onClick={() => navigate("/create")}>
           Create My Postcard
         </Button>
         <div className="relative z-10">

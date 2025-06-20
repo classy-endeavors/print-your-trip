@@ -23,7 +23,7 @@ const Button: React.FC<ButtonProps> = ({
       "px-8 py-2 bg-button-green text-white text-sm rounded-full font-semibold hover:bg-button-green/[0.8] hover:shadow-lg",
     secondary: "bg-gray-600 text-white hover:bg-gray-700 disabled:bg-gray-300",
     outline:
-      "border-2 border-blue-600 text-blue-600 hover:bg-blue-50 disabled:opacity-50",
+      "border-2 border-button-green text-blue-600 hover:bg-blue-50 disabled:opacity-50",
   };
 
   return (
@@ -31,7 +31,7 @@ const Button: React.FC<ButtonProps> = ({
       onClick={onClick}
       disabled={disabled}
       type={type}
-      className={cn(variantStyles[variant], className)}
+      className={cn(variantStyles[variant], className, "cursor-pointer")}
     >
       {children}
     </button>

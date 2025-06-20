@@ -1,9 +1,13 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Button from "./Button";
 import logoFull from "../assets/logo-full.png";
+import logoExt from "../assets/logo-ext.svg";
+import logoTagline from "../assets/logo-tagline.png";
+import ChevronLeft from "./icons/ChevronLeft";
 
+// MenuItem and Menu from Navbar.tsx
 export const MenuItem = ({
   item,
   to,
@@ -50,9 +54,36 @@ const navItems = [
   { label: "Privacy Policy", to: "/privacy-policy" },
 ];
 
-const Navbar = () => {
-  const [mobileOpen, setMobileOpen] = useState(false);
+type NavbarProps = {
+  variant: "main" | "converter";
+};
 
+const Navbar: React.FC<NavbarProps> = ({ variant }) => {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const navigate = useNavigate();
+
+  if (variant === "converter") {
+    // Converter Navbar design
+    return (
+      <nav className="fixed z-50 w-full">
+        <div className="relative m-5 flex justify-between rounded-full p-5 shadow-md md:shadow-none">
+          <a href="/">
+            <ChevronLeft className="p-3 h-15 w-15 cursor-pointer rounded-full text-gray-600 md:shadow-2xl md:shadow-black" />
+          </a>
+          <div className="flex flex-col gap-2 flex-1 justify-center items-center">
+            <img
+              className="mr-2 max-h-[3rem] max-w-[10rem]"
+              src={logoExt}
+              alt="logo-ext"
+            />
+            <img className="max-w-[10rem]" src={logoTagline} alt="logo-tagline" />
+          </div>
+        </div>
+      </nav>
+    );
+  }
+
+  // Main Navbar design
   return (
     <motion.div
       initial={{ opacity: 0, y: -20 }}
@@ -119,7 +150,7 @@ const Navbar = () => {
                 onClick={() => setMobileOpen(false)}
               />
             ))}
-            <Button>Create My Postcard</Button>
+            <Button onClick={() => navigate("/create")}>Create My Postcard</Button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -127,4 +158,4 @@ const Navbar = () => {
   );
 };
 
-export default Navbar;
+export default Navbar; 
