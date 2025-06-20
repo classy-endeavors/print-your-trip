@@ -20,7 +20,7 @@ const Stepper: React.FC<StepperProps> = ({
   return (
     <>
       <div className="flex h-20 w-full flex-col items-start px-5">
-        <div className="flex w-full items-center rounded-full bg-alice-blue/50 px-1 py-1">
+        <div className="mx-auto flex w-full max-w-2xl items-center rounded-full bg-alice-blue/50 px-1 py-1">
           {steps.map((step, idx) => (
             <React.Fragment key={step}>
               <div

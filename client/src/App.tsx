@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import HowItWorks from "./pages/HIW";
 import FAQ from "./pages/FAQ";
@@ -13,27 +13,22 @@ import Create from "./pages/Create";
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route element={<Layout />}>
-          <Route path="/" element={<Home />} />
-          <Route path="/how-it-works" element={<HowItWorks />} />
-          <Route path="/faq" element={<FAQ />} />
-          <Route path="/blogs" element={<BLOGS />} />
-          <Route path="/blog" element={<BLOG />} />
-          <Route path="/pricing" element={<Pricing />} />
-          <Route
-            path="/terms-and-conditions"
-            element={<TermsAndConditions />}
-          />
-          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-        </Route>
-        <Route element={<Layout variant="converter" />}>
-          <Route path="/create" element={<Create />} />
-        </Route>
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </Router>
+    <Routes>
+      <Route element={<Layout />}>
+        <Route path="/" element={<Home />} />
+        <Route path="/how-it-works" element={<HowItWorks />} />
+        <Route path="/faq" element={<FAQ />} />
+        <Route path="/blogs" element={<BLOGS />} />
+        <Route path="/blog" element={<BLOG />} />
+        <Route path="/pricing" element={<Pricing />} />
+        <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+      </Route>
+      <Route element={<Layout variant="converter" />}>
+        <Route path="/create" element={<Create />} />
+      </Route>
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
 }
 
