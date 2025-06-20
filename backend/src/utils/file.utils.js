@@ -88,6 +88,23 @@ export class FileUtils {
     }
 
     /**
+     * Extract S3 key from S3 URL
+     */
+    static extractS3KeyFromUrl(s3Url) {
+        if (!s3Url.startsWith('https://')) {
+            return s3Url; // Already a key
+        }
+        
+        try {
+            const url = new URL(s3Url);
+            return url.pathname.substring(1); // Remove leading slash
+        } catch (error) {
+            console.error('Error parsing S3 URL:', error);
+            return s3Url;
+        }
+    }
+
+    /**
      * Generate public S3 URL
      */
     static generateS3Url(bucket, key, region = 'us-east-2') {
