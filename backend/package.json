@@ -1,0 +1,26 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "offline": "serverless offline start --stage production --reloadHandler --noTimeout",
+    "deploy": "serverless deploy"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "serverless": "^4.17.1",
+    "@aws-sdk/client-s3": "^3.478.0",
+    "sharp": "^0.32.6",
+    "pdfkit": "^0.13.0",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "serverless-offline": "^14.4.0"
+  }
+}
