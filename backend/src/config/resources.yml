@@ -1,0 +1,4 @@
+ImageBucket:
+  Type: AWS::S3::Bucket
+  Properties:
+    BucketName: ${env:IMAGE_S3_BUCKET}

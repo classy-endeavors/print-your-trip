@@ -1,0 +1,49 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: classyendeavors
+# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
+app: print-your-trip
+service: print-your-trip-api-service
+useDotenv: true
+
+plugins:
+  - serverless-offline
+
+custom:
+  stage: ${opt:stage, 'local'}
+  region: ${opt:region, self:provider.region}
+  env: ${opt:env, self:custom.stage}
+  serverless-offline:
+    httpPort: 5200
+
+resources:
+  Resources: ${file(src/config/resources.yml)}
+
+provider:
+  name: aws
+  runtime: nodejs16.x
+  region: eu-north-1
+  stage: ${self:custom.stage}
+  iam:
+    role:
+      statements: ${file(src/config/permissions.yml)}
+  environment:
+    STAGE: ${env:STAGE}
+    IMAGE_S3_BUCKET: ${env:IMAGE_S3_BUCKET}
+
+  vpc:
+    securityGroupIds:
+      - Fn::GetAtt: [VPCStaticIP, DefaultSecurityGroup]
+    subnetIds:
+      - Ref: SubnetPrivate
+  timeout: 50
+
+functions:
+  login:
+    handler: src/handlers/auth.login
+    events:
+      - http:
+          path: /login
+          method: post
+          cors:
+            origin: "*"
+            allowCredentials: true
