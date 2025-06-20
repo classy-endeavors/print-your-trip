@@ -5,7 +5,7 @@ import bgVector1 from "../assets/bg-vector-1.png";
 
 export default function HeroSection() {
   return (
-    <div className="relative h-screen overflow-hidden rounded-b-[4rem] bg-background-hero p-7 pt-20">
+    <div className="relative overflow-hidden rounded-b-[4rem] bg-background-hero p-7 pb-20">
       <div className="flex h-full flex-col justify-center gap-4">
         <span className="text-[2rem] font-bold">
           Turn Your Travel Pics into Postcards - Mailed for You!
