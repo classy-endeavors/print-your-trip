@@ -18,7 +18,10 @@ export default function HeroSection() {
         <span className="font-light">
           Upload a photo, add a message & the address, and we'll do the rest.
         </span>
-        <Button className="w-fit text-lg font-medium" onClick={() => navigate("/create")}>
+        <Button
+          className="w-fit text-lg font-medium"
+          onClick={() => navigate("/create")}
+        >
           Create My Postcard
         </Button>
         <div className="relative z-10">
