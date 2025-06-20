@@ -83,14 +83,14 @@ export default function AddressForm({
     `mb-3 w-full rounded-md border-none bg-white p-3 text-[16px] outline-none focus:ring-2 focus:ring-button-green ${
       errors[field]
         ? "border border-red-500 text-red-600 placeholder:text-red-400"
-        : "text-black placeholder:text-gray-400"
+        : "text-black placeholder:text-gray-300"
     }`;
 
   const smallInputClass = (field: keyof Address, width: string) =>
     `${width} rounded-md border-none bg-white p-3 text-[16px] outline-none focus:ring-2 focus:ring-button-green ${
       errors[field]
         ? "border border-red-500 text-red-600 placeholder:text-red-400"
-        : "text-black placeholder:text-gray-400"
+        : "text-black placeholder:text-gray-300"
     }`;
 
   return (
