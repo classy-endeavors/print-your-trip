@@ -1,0 +1,35 @@
+ImageBucket:
+  Type: AWS::S3::Bucket
+  Properties:
+    BucketName: ${env:IMAGE_S3_BUCKET}
+    PublicAccessBlockConfiguration:
+      BlockPublicAcls: false
+      BlockPublicPolicy: false
+      IgnorePublicAcls: false
+      RestrictPublicBuckets: false
+    CorsConfiguration:
+      CorsRules:
+        - AllowedHeaders:
+            - "*"
+          AllowedMethods:
+            - GET
+            - PUT
+            - POST
+            - DELETE
+            - HEAD
+          AllowedOrigins:
+            - "*"
+          MaxAge: 3000
+
+ImageBucketPolicy:
+  Type: AWS::S3::BucketPolicy
+  Properties:
+    Bucket: !Ref ImageBucket
+    PolicyDocument:
+      Statement:
+        - Sid: PublicReadGetObject
+          Effect: Allow
+          Principal: "*"
+          Action:
+            - s3:GetObject
+          Resource: !Sub "${ImageBucket}/*"
