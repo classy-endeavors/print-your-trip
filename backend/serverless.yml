@@ -1,6 +1,5 @@
-# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+# serverless.yml
 org: classyendeavors
-# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
 app: print-your-trip
 service: print-your-trip-api-service
 useDotenv: true
@@ -23,23 +22,40 @@ provider:
   runtime: nodejs18.x
   region: ${env:AWS_REGION}
   stage: ${self:custom.stage}
+  timeout: 29
+  
+  # Fixed API Gateway configuration
+  apiGateway:
+    binaryMediaTypes:
+      - 'multipart/form-data'
+      - 'image/jpeg'
+      - 'image/jpg'
+      - 'image/png'
+      - 'image/gif'
+      - 'image/webp'
+      - 'application/pdf'
+      - 'application/octet-stream'
+  
+  # IAM and environment
   iam:
     role:
       statements: ${file(src/config/permissions.yml)}
   environment:
     STAGE: ${env:STAGE}
     IMAGE_S3_BUCKET: ${env:IMAGE_S3_BUCKET}
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
 
-  vpc:
-    securityGroupIds:
-      - Fn::GetAtt: [VPCStaticIP, DefaultSecurityGroup]
-    subnetIds:
-      - Ref: SubnetPrivate
-  timeout: 50
+  # Stack tags for better resource management
+  stackTags:
+    Environment: ${self:custom.stage}
+    Service: ${self:service}
+    Owner: classyendeavors
 
 functions:
   uploadImage:
     handler: src/handlers/image.upload
+    description: "Upload images to S3 bucket"
+    memorySize: 512
     events:
       - http:
           path: /upload
@@ -47,10 +63,14 @@ functions:
           cors:
             origin: "*"
             allowCredentials: true
-    timeout: 30
+    timeout: 29
+    environment:
+      MAX_FILE_SIZE: 10485760
 
   convertToPDF:
     handler: src/handlers/image.convert
+    description: "Convert images to PDF"
+    memorySize: 1024
     events:
       - http:
           path: /convert
@@ -58,4 +78,6 @@ functions:
           cors:
             origin: "*"
             allowCredentials: true
-    timeout: 30
+    timeout: 29
+    environment:
+      MAX_FILE_SIZE: 10485760
