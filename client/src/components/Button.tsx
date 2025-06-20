@@ -21,9 +21,10 @@ const Button: React.FC<ButtonProps> = ({
   const variantStyles = {
     primary:
       "px-8 py-2 bg-button-green text-white text-sm rounded-full font-semibold hover:bg-button-green/[0.8] hover:shadow-lg",
-    secondary: "bg-gray-600 text-white hover:bg-gray-700 disabled:bg-gray-300",
+    secondary:
+      "px-8 py-2 bg-gray-600 text-white text-sm rounded-full font-semibold hover:bg-gray-700 hover:shadow-lg disabled:bg-gray-300 disabled:cursor-not-allowed",
     outline:
-      "border-2 border-button-green text-blue-600 hover:bg-blue-50 disabled:opacity-50",
+      "px-8 py-2 border-2 border-button-green text-button-green text-sm rounded-full font-semibold hover:bg-button-green hover:text-white hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed",
   };
 
   return (

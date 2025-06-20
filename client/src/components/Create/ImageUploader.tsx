@@ -1,37 +1,54 @@
 import React, { useState, useRef } from "react";
-import ReactCrop from "react-image-crop";
-import type { Crop } from "react-image-crop";
+import ReactCrop, { type Crop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
-import axios from "axios";
 import {
-  TARGET_WIDTH,
-  TARGET_HEIGHT,
   TARGET_ASPECT_RATIO,
   convertHeicToJpeg,
   calculateInitialCrop,
   getCroppedImg,
 } from "../../lib/imageUtils";
+import api from "../../lib/api";
+import Button from "../Button";
+import LoadingBar from "./LoadingBar";
+import Check from "../icons/Check";
+
+type View =
+  | "upload"
+  | "convertingHeic"
+  | "cropping"
+  | "preview"
+  | "error"
+  | "uploading"
+  | "success";
 
 const ImageUploader: React.FC = () => {
+  const [view, setView] = useState<View>("upload");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [crop, setCrop] = useState<Crop>({
-    unit: "px",
-    width: TARGET_WIDTH,
-    height: TARGET_HEIGHT,
-    x: 0,
-    y: 0,
-  });
+  const [crop, setCrop] = useState<Crop>();
   const [croppedImage, setCroppedImage] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [isConverting, setIsConverting] = useState(false);
-  const [uploadedS3Path, setUploadedS3Path] = useState<string | null>(null);
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-  const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const imageRef = useRef<HTMLImageElement>(null);
+  const [uploadedS3Path, setUploadedS3Path] = useState<string | null>(null);
+  const [isConvertingPdf, setIsConvertingPdf] = useState(false);
+  const [scale, setScale] = useState(1);
 
-  const API_URL = import.meta.env.VITE_API_URL;
-  console.log(API_URL);
+  const imageRef = useRef<HTMLImageElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const resetState = () => {
+    setView("upload");
+    setSelectedImage(null);
+    setCrop(undefined);
+    setCroppedImage(null);
+    setUploadProgress(0);
+    setError(null);
+    setUploadedS3Path(null);
+    setIsConvertingPdf(false);
+    setScale(1);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const handleImageUpload = async (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -39,393 +56,319 @@ const ImageUploader: React.FC = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    console.log("Selected file:", file);
-    try {
-      setError(null);
-      let processedFile = file;
+    resetState();
+    let processedFile = file;
 
-      if (
-        file.type === "image/heic" ||
-        file.name.toLowerCase().endsWith(".heic") ||
-        (!file.type && file.name.toLowerCase().endsWith(".heic"))
-      ) {
-        try {
-          processedFile = await convertHeicToJpeg(file);
-        } catch {
-          setError(
-            "Failed to convert HEIC image. Please try a different file or use a JPEG/PNG.",
-          );
-          return;
-        }
+    if (
+      file.type === "image/heic" ||
+      file.name.toLowerCase().endsWith(".heic")
+    ) {
+      setView("convertingHeic");
+      try {
+        processedFile = await convertHeicToJpeg(file);
+      } catch (err) {
+        setError("Failed to convert HEIC. Please try a different file type.");
+        setView("error");
+        return;
+      }
+    }
+
+    const image = new Image();
+    image.src = URL.createObjectURL(processedFile);
+    image.onload = () => {
+      // Validation: Check for landscape orientation
+      if (image.naturalWidth < image.naturalHeight) {
+        setError(
+          "Portrait photos are not supported. Please upload a photo with a landscape orientation.",
+        );
+        setSelectedImage(image.src); // To show the invalid image
+        setView("error");
+        return;
       }
 
       const reader = new FileReader();
-      reader.onload = (e) => {
-        setSelectedImage(e.target?.result as string);
-        setIsImageLoaded(false);
-        // Reset states when new image is uploaded
-        setCroppedImage(null);
-        setUploadedS3Path(null);
-        setPdfUrl(null);
+      reader.onloadend = () => {
+        setSelectedImage(reader.result as string);
+        setView("cropping");
       };
       reader.readAsDataURL(processedFile);
-    } catch (error) {
-      console.error("Error processing image:", error);
-      setError("Error processing image. Please try again.");
+    };
+    image.onerror = () => {
+      setError("Could not load image. The file may be corrupt.");
+      setView("error");
+    };
+  };
+
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    setScale(1); // Reset scale on new image
+    const { naturalWidth, naturalHeight, width, height } = e.currentTarget;
+    const initialCrop = calculateInitialCrop(
+      width,
+      height,
+      naturalWidth,
+      naturalHeight,
+    );
+    setCrop(initialCrop);
+  };
+
+  const handlePreview = async () => {
+    if (!imageRef.current || !crop) return;
+
+    try {
+      const finalCroppedImage = await getCroppedImg(imageRef.current, crop);
+      setCroppedImage(finalCroppedImage);
+      setView("preview");
+    } catch (err) {
+      console.error("Cropping failed", err);
+      setError("Could not crop image. Please try again.");
+      setView("error");
     }
   };
 
-  const handleImageLoad = () => {
-    if (imageRef.current) {
-      const {
-        naturalWidth,
-        naturalHeight,
-        width: displayWidth,
-        height: displayHeight,
-      } = imageRef.current;
-      const initialCrop = calculateInitialCrop(
-        displayWidth,
-        displayHeight,
-        naturalWidth,
-        naturalHeight,
-      );
-      setCrop(initialCrop);
-      setIsImageLoaded(true);
-    }
-  };
-
-  const handleCropComplete = async () => {
-    if (imageRef.current && crop && isImageLoaded) {
-      try {
-        const croppedImageUrl = await getCroppedImg(imageRef.current, crop);
-        setCroppedImage(croppedImageUrl);
-      } catch (error) {
-        console.error("Error cropping image:", error);
-        setError("Error cropping image. Please try again.");
-      }
-    }
-  };
-
-  const handleSavePhoto = async () => {
+  const handleUpload = async () => {
     if (!croppedImage) return;
 
-    console.log("=== SAVE PHOTO START ===");
-    console.log("Cropped image URL:", croppedImage);
+    setView("uploading");
+    setUploadProgress(0);
 
-    setIsUploading(true);
-    setError(null);
     try {
-      console.log("Fetching cropped image blob...");
       const response = await fetch(croppedImage);
       const blob = await response.blob();
-      console.log("Blob size:", blob.size, "Blob type:", blob.type);
-
       const formData = new FormData();
       formData.append("image", blob, "image.jpg");
-      console.log("FormData created with image");
 
-      console.log("Making upload request to /api/upload...");
-      const uploadResponse = await axios.post(
-        `${API_URL + "/upload"}`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
+      const uploadResponse = await api.post("/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+        onUploadProgress: (progressEvent) => {
+          const percent = Math.round(
+            (progressEvent.loaded * 100) / (progressEvent.total ?? 1),
+          );
+          setUploadProgress(percent);
         },
-      );
+      });
 
-      console.log("Upload response:", uploadResponse.data);
       setUploadedS3Path(uploadResponse.data.s3Path);
-      console.log("=== SAVE PHOTO SUCCESS ===");
-    } catch (error) {
-      console.error("=== SAVE PHOTO ERROR ===");
-      console.error("Error details:", error);
-      if (axios.isAxiosError(error)) {
-        console.error("Axios error response:", error.response?.data);
-        console.error("Axios error status:", error.response?.status);
-      }
-      setError("Error uploading image. Please try again.");
-    } finally {
-      setIsUploading(false);
+      setView("success");
+    } catch (err) {
+      console.error(err);
+      setError("Upload failed. Please try again.");
+      setView("error");
     }
   };
 
-  const handleExportPDF = async () => {
+  const handleExportPdf = async () => {
     if (!uploadedS3Path) return;
-
-    console.log("=== EXPORT PDF START ===");
-    console.log("Uploaded S3 path:", uploadedS3Path);
-
-    setIsConverting(true);
-    setError(null);
+    setIsConvertingPdf(true);
     try {
-      console.log("Making convert request to /api/convert...");
-      const response = await axios.post(`${API_URL + "/convert"}`, {
-        s3Path: uploadedS3Path,
-      });
+      const response = await api.post("/convert", { s3Path: uploadedS3Path });
+      const { pdfDownloadUrl } = response.data;
 
-      console.log("Convert response:", response.data);
-      setPdfUrl(response.data.pdfDownloadUrl);
-      console.log("=== EXPORT PDF SUCCESS ===");
-    } catch (error) {
-      console.error("=== EXPORT PDF ERROR ===");
-      console.error("Error details:", error);
-      if (axios.isAxiosError(error)) {
-        console.error("Axios error response:", error.response?.data);
-        console.error("Axios error status:", error.response?.status);
-      }
-      setError("Error converting to PDF. Please try again.");
+      // Fetch the PDF as a blob to force download
+      const pdfResponse = await fetch(pdfDownloadUrl);
+      const blob = await pdfResponse.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      // Trigger download
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "postcard.pdf");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to generate PDF. Please try again.");
+      setView("error"); // Revert to error state
     } finally {
-      setIsConverting(false);
+      setIsConvertingPdf(false);
     }
+  };
+
+  const triggerFileUpload = () => {
+    fileInputRef.current?.click();
   };
 
   return (
-    <div className="mx-auto max-w-4xl p-4 sm:p-6">
-      {/* Mobile-optimized file upload area */}
-      <div className="mb-6">
-        <label className="block w-full cursor-pointer rounded-lg border-2 border-dashed border-gray-300 p-6 text-center transition-colors hover:border-blue-400 hover:bg-blue-50">
-          <div className="flex flex-col items-center space-y-2">
-            <svg
-              className="h-12 w-12 text-gray-400"
-              stroke="currentColor"
-              fill="none"
-              viewBox="0 0 48 48"
-            >
-              <path
-                d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <div className="text-sm text-gray-600">
-              <span className="font-medium text-blue-600 hover:text-blue-500">
-                Tap to upload
-              </span>{" "}
-              or drag and drop
-            </div>
-            <p className="text-xs text-gray-500">HEIC, JPEG, PNG up to 10MB</p>
-          </div>
-          <input
-            type="file"
-            accept="image/*,.heic,.HEIC"
-            onChange={handleImageUpload}
-            className="hidden"
-          />
-        </label>
-      </div>
+    <div className="flex flex-col items-center justify-center py-4">
+      <div className="flex w-[25rem] max-w-[90vw] flex-col items-center rounded-xl bg-background-hero p-6">
+        <input
+          ref={fileInputRef}
+          type="file"
+          className="hidden"
+          accept="image/*,.heic,.HEIC"
+          onChange={handleImageUpload}
+        />
 
-      {error && (
-        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4">
-          <div className="flex">
-            <svg
-              className="h-5 w-5 text-red-400"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <div className="ml-3">
-              <p className="text-sm text-red-700">{error}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {selectedImage && (
-        <div className="mb-6">
-          <h3 className="mb-4 text-lg font-semibold text-gray-900">
-            Crop your photo
-          </h3>
-          <div className="relative overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
-            <ReactCrop
-              crop={crop}
-              onChange={(c) => setCrop(c)}
-              onComplete={handleCropComplete}
-              aspect={TARGET_ASPECT_RATIO}
-              locked={true}
-              className="max-w-full"
+        {view === "upload" && (
+          <div className="flex w-full flex-col items-center justify-center space-y-4 text-center">
+            <h2 className="mb-2 text-lg font-semibold text-black">
+              Upload Your Photo
+            </h2>
+            <div
+              className="relative w-full cursor-pointer rounded-lg border-2 border-dashed border-gray-300 p-4"
+              onClick={triggerFileUpload}
             >
               <img
-                ref={imageRef}
-                src={selectedImage}
-                alt="Upload"
-                className="h-auto max-w-full"
-                onLoad={handleImageLoad}
+                src="/src/assets/hero-z-0.jpg"
+                alt="Safe area placeholder"
+                className="rounded-lg"
               />
-            </ReactCrop>
-          </div>
-          <p className="mt-2 text-sm text-gray-600">
-            Drag to adjust the crop area. The image will be resized to 1800×1200
-            pixels.
-          </p>
-        </div>
-      )}
-
-      {croppedImage && (
-        <div className="mb-6">
-          <h3 className="mb-4 text-lg font-semibold text-gray-900">Preview</h3>
-          <div className="overflow-hidden rounded-lg border border-gray-200">
-            <img src={croppedImage} alt="Cropped" className="h-auto w-full" />
-          </div>
-          <p className="mt-2 text-sm text-gray-600">
-            This is how your postcard will look when printed.
-          </p>
-        </div>
-      )}
-
-      {/* Mobile-optimized action buttons */}
-      <div className="flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-4">
-        <button
-          onClick={handleSavePhoto}
-          disabled={!croppedImage || isUploading}
-          className={`flex-1 rounded-lg px-6 py-4 text-base font-semibold text-white shadow-sm transition-colors ${
-            !croppedImage || isUploading
-              ? "cursor-not-allowed bg-gray-400"
-              : "bg-blue-600 hover:bg-blue-700 active:bg-blue-800"
-          }`}
-        >
-          {isUploading ? (
-            <div className="flex items-center justify-center">
-              <svg
-                className="mr-3 -ml-1 h-5 w-5 animate-spin text-white"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-              </svg>
-              Uploading...
-            </div>
-          ) : (
-            "Save Photo"
-          )}
-        </button>
-
-        {uploadedS3Path && (
-          <button
-            onClick={handleExportPDF}
-            disabled={isConverting}
-            className={`flex-1 rounded-lg px-6 py-4 text-base font-semibold text-white shadow-sm transition-colors ${
-              isConverting
-                ? "cursor-not-allowed bg-gray-400"
-                : "bg-green-600 hover:bg-green-700 active:bg-green-800"
-            }`}
-          >
-            {isConverting ? (
-              <div className="flex items-center justify-center">
-                <svg
-                  className="mr-3 -ml-1 h-5 w-5 animate-spin text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                Converting...
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                <div className="rounded-md bg-white px-2 py-1 text-sm font-medium text-gray-600 shadow-sm">
+                  SAFE AREA
+                </div>
               </div>
-            ) : (
-              "Export PDF"
-            )}
-          </button>
+            </div>
+            <p className="text-sm text-gray-500">
+              Upload any landscape photo taken from your iPhone
+            </p>
+            <Button
+              onClick={triggerFileUpload}
+              className="w-full rounded-full bg-button-green py-2 text-lg font-medium text-white transition-colors duration-200"
+            >
+              Choose Photo
+            </Button>
+          </div>
+        )}
+
+        {view === "convertingHeic" && (
+          <div className="flex flex-col items-center justify-center space-y-4">
+            <p className="text-lg font-semibold text-gray-800">
+              Converting HEIC image...
+            </p>
+            <div className="w-full max-w-md rounded-full bg-gray-200">
+              <div className="h-4 animate-pulse rounded-full bg-button-green"></div>
+            </div>
+          </div>
+        )}
+
+        {view === "cropping" && selectedImage && (
+          <div className="w-full space-y-4">
+            <h2 className="text-center text-lg font-semibold text-black">
+              Crop Your Photo
+            </h2>
+            <div className="relative w-full overflow-hidden rounded-lg border-2 border-dashed border-gray-300 p-2">
+              <ReactCrop
+                crop={crop}
+                onChange={(c) => setCrop(c)}
+                aspect={TARGET_ASPECT_RATIO}
+                locked
+              >
+                <img
+                  ref={imageRef}
+                  src={selectedImage}
+                  onLoad={handleImageLoad}
+                  alt="Crop preview"
+                  className="h-auto w-full"
+                  style={{ transform: `scale(${scale})` }}
+                />
+              </ReactCrop>
+            </div>
+            <div className="mx-auto flex w-full max-w-sm items-center space-x-4">
+              <span className="text-sm text-gray-600">Zoom</span>
+              <input
+                type="range"
+                min="1"
+                max="3"
+                step="0.05"
+                value={scale}
+                onChange={(e) => setScale(parseFloat(e.target.value))}
+                className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-200 accent-button-green"
+              />
+            </div>
+            <div className="flex w-full flex-col space-y-2">
+              <Button
+                onClick={handlePreview}
+                className="w-full rounded-full bg-button-green py-2 text-lg font-medium text-white transition-colors duration-200"
+              >
+                Save Photo
+              </Button>
+              <Button onClick={resetState} variant="outline">
+                Change Photo
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {view === "preview" && croppedImage && (
+          <div className="w-full space-y-4">
+            <h2 className="text-center text-lg font-semibold text-black">
+              Your Postcard Preview
+            </h2>
+            <div className="overflow-hidden rounded-lg border border-gray-200">
+              <img
+                src={croppedImage}
+                alt="Cropped preview"
+                className="h-auto w-full"
+              />
+            </div>
+            <p className="mt-2 text-center text-sm text-gray-600">
+              This is how your postcard will look when printed.
+            </p>
+            <div className="flex w-full flex-col space-y-2">
+              <Button
+                onClick={handleUpload}
+                className="w-full rounded-full bg-button-green py-2 text-lg font-medium text-white transition-colors duration-200"
+              >
+                Save and Continue
+              </Button>
+              <Button onClick={() => setView("cropping")} variant="outline">
+                Re-crop Photo
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {(view === "error" || (view === "cropping" && error)) && (
+          <div className="flex w-full flex-col items-center justify-center space-y-4 text-center">
+            <div className="relative w-full max-w-lg rounded-lg border-2 border-dashed border-red-400 p-4">
+              {selectedImage && (
+                <img
+                  src={selectedImage}
+                  alt="Error preview"
+                  className="rounded-lg opacity-40"
+                />
+              )}
+              <div className="absolute inset-0 flex items-center justify-center p-4">
+                <div className="bg-opacity-90 rounded-lg bg-white p-6 text-center text-red-600 shadow-xl">
+                  <p className="font-bold">{error}</p>
+                </div>
+              </div>
+            </div>
+            <Button
+              onClick={resetState}
+              className="w-full rounded-full bg-button-green py-2 text-lg font-medium text-white transition-colors duration-200"
+            >
+              Try a different photo
+            </Button>
+          </div>
+        )}
+
+        {view === "uploading" && <LoadingBar progress={uploadProgress} />}
+
+        {view === "success" && (
+          <div className="flex w-full flex-col items-center justify-center space-y-6 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+              <Check className="h-10 w-10" color="#6B8F6E" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-800">
+              Upload Complete!
+            </h2>
+            <p className="text-gray-600">
+              Your photo has been saved. You can now convert it to a print-ready
+              PDF.
+            </p>
+            <Button
+              onClick={handleExportPdf}
+              disabled={isConvertingPdf}
+              className="w-full rounded-full bg-button-green py-2 text-lg font-medium text-white transition-colors duration-200"
+            >
+              {isConvertingPdf ? "Converting..." : "Convert and Download PDF"}
+            </Button>
+          </div>
         )}
       </div>
-
-      {pdfUrl && (
-        <div className="mt-6 rounded-lg border border-green-200 bg-green-50 p-6">
-          <div className="flex items-center">
-            <svg
-              className="h-6 w-6 text-green-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <div className="ml-3">
-              <h3 className="text-lg font-semibold text-green-800">
-                PDF Ready!
-              </h3>
-              <p className="text-sm text-green-700">
-                Your CMYK PDF is ready for download.
-              </p>
-            </div>
-          </div>
-          <div className="mt-4">
-            <button
-              onClick={async () => {
-                if (!pdfUrl) return;
-                try {
-                  const response = await fetch(pdfUrl);
-                  const blob = await response.blob();
-                  const url = window.URL.createObjectURL(blob);
-                  const a = document.createElement("a");
-                  a.href = url;
-                  a.download = "postcard.pdf";
-                  document.body.appendChild(a);
-                  a.click();
-                  a.remove();
-                  window.URL.revokeObjectURL(url);
-                } catch (e: unknown) {
-                  console.log("Failed to download PDF.", e);
-                }
-              }}
-              className="inline-flex items-center rounded-lg bg-green-600 px-6 py-3 text-base font-semibold text-white shadow-sm transition-colors hover:bg-green-700 active:bg-green-800"
-              type="button"
-            >
-              <svg
-                className="mr-2 h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
-              Download CMYK PDF
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
