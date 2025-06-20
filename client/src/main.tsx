@@ -7,7 +7,7 @@ createRoot(document.getElementById("root")!).render(
   <BrowserRouter>
     {/* StrictMode is commented out to avoid double rendering issues */}
     {/* <React.StrictMode> */}
-      <App />
+    <App />
     {/* </React.StrictMode> */}
-  </BrowserRouter>
+  </BrowserRouter>,
 );

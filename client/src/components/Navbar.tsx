@@ -47,11 +47,9 @@ export const Menu = ({
 const navItems = [
   { label: "Home", to: "/" },
   { label: "How It Works", to: "/how-it-works" },
+  { label: "Pricing", to: "/pricing" },
   { label: "FAQ", to: "/faq" },
   { label: "Blogs", to: "/blogs" },
-  { label: "Pricing", to: "/pricing" },
-  { label: "Terms and Conditions", to: "/terms-and-conditions" },
-  { label: "Privacy Policy", to: "/privacy-policy" },
 ];
 
 type NavbarProps = {
@@ -100,17 +98,41 @@ const Navbar: React.FC<NavbarProps> = ({ variant }) => {
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 120, damping: 12 }}
-      className="fixed top-6 left-1/2 z-50 flex w-[95vw] max-w-2xl -translate-x-1/2 items-center justify-between rounded-full bg-background/70 px-4 py-3 font-league-spartan shadow-lg backdrop-blur md:px-8"
+      className="fixed top-6 left-1/2 z-50 flex w-[97vw] max-w-5xl -translate-x-1/2 items-center justify-between rounded-full bg-[#ede9dd] px-8 py-4 font-league-spartan shadow-[0_4px_24px_0_rgba(0,0,0,0.18)]"
     >
-      {/* Desktop Menu */}
-      <div className="hidden w-full justify-center md:flex">
-        <Menu>
-          {navItems.map((item) => (
-            <MenuItem key={item.to} item={item.label} to={item.to} />
-          ))}
-        </Menu>
+      {/* Logo and Tagline */}
+      <div className="hidden min-w-[210px] flex-col items-start justify-center pl-2 md:flex">
+        <span className="text-3xl leading-none font-extrabold tracking-tight text-black">
+          print your trip
+        </span>
+        <span className="mt-1 text-xs font-medium tracking-[0.35em] text-gray-600">
+          Real-Time postcards
+        </span>
       </div>
-      {/* Mobile Hamburger */}
+      {/* Desktop Menu */}
+      <div className="hidden flex-1 justify-center md:flex">
+        <nav className="flex space-x-8">
+          {navItems.map((item, idx) => (
+            <Link
+              key={item.to}
+              to={item.to}
+              className={`text-lg transition-colors duration-150 ${idx === 0 ? "font-bold text-black" : "font-medium text-gray-500 hover:text-black"}`}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+      </div>
+      {/* Create My Postcard Button */}
+      <div className="hidden md:flex">
+        <Button
+          className="rounded-full bg-[#6b8c6a] px-7 py-2 text-lg font-semibold text-white shadow-none transition-colors duration-150 hover:bg-[#5e7c5d]"
+          onClick={() => navigate("/create")}
+        >
+          Create My Postcard
+        </Button>
+      </div>
+      {/* Mobile Hamburger and Menu */}
       <div className="flex w-full items-center justify-between md:hidden">
         <img className="max-w-30" src={logoFull} alt="logo" />
         <button
@@ -143,7 +165,6 @@ const Navbar: React.FC<NavbarProps> = ({ variant }) => {
           </svg>
         </button>
       </div>
-      {/* Mobile Menu Overlay */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div
@@ -151,17 +172,25 @@ const Navbar: React.FC<NavbarProps> = ({ variant }) => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ type: "spring", stiffness: 120, damping: 14 }}
-            className="absolute top-14 left-1/2 flex w-[90vw] max-w-xs -translate-x-1/2 flex-col items-center space-y-4 rounded-2xl bg-background p-6 shadow-xl md:hidden"
+            className="absolute top-14 left-1/2 flex w-[90vw] max-w-xs -translate-x-1/2 flex-col items-center space-y-4 rounded-2xl bg-[#ede9dd] p-6 shadow-xl md:hidden"
           >
             {navItems.map((item) => (
-              <MenuItem
+              <Link
                 key={item.to}
-                item={item.label}
                 to={item.to}
+                className="w-full text-center text-lg font-medium text-gray-700"
                 onClick={() => setMobileOpen(false)}
-              />
+              >
+                {item.label}
+              </Link>
             ))}
-            <Button onClick={() => navigate("/create")}>
+            <Button
+              className="rounded-full bg-[#6b8c6a] px-7 py-2 text-lg font-semibold text-white shadow-none transition-colors duration-150 hover:bg-[#5e7c5d]"
+              onClick={() => {
+                setMobileOpen(false);
+                navigate("/create");
+              }}
+            >
               Create My Postcard
             </Button>
           </motion.div>
