@@ -170,6 +170,7 @@ export const upload = async (event) => {
 /**
  * Convert handler - Converts RGB image to CMYK PDF
  */
+// src/handlers/image.js
 export const convert = async (event) => {
     console.log('=== PDF CONVERSION HANDLER START ===');
     console.log('Event:', JSON.stringify(event, null, 2));
@@ -181,7 +182,6 @@ export const convert = async (event) => {
         'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
     };
 
-    // Handle preflight requests
     if (event.httpMethod === 'OPTIONS') {
         console.log('Handling OPTIONS preflight request');
         return {
@@ -193,9 +193,9 @@ export const convert = async (event) => {
 
     try {
         const body = event.body ? JSON.parse(event.body) : {};
-        const s3Path = body.s3Path;
+        let s3Path = body.s3Path;
 
-        console.log('S3 Path:', s3Path);
+        console.log('Original S3 Path:', s3Path);
 
         if (!s3Path) {
             console.log('No S3 path provided');
@@ -207,6 +207,13 @@ export const convert = async (event) => {
                     error: 'NO_S3_PATH',
                 }),
             };
+        }
+
+        // Extract key from full URL if needed
+        if (s3Path.startsWith('https://')) {
+            const url = new URL(s3Path);
+            s3Path = url.pathname.substring(1); // Remove leading slash
+            console.log('Extracted key from URL:', s3Path);
         }
 
         // Get bucket name from environment
@@ -222,6 +229,9 @@ export const convert = async (event) => {
                 }),
             };
         }
+
+        console.log('Final bucket:', bucket);
+        console.log('Final key:', s3Path);
 
         // Download the image from S3
         console.log('Downloading image from S3...');

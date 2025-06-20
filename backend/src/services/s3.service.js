@@ -2,7 +2,7 @@ import { S3Client, GetObjectCommand, PutObjectCommand, ListObjectsV2Command } fr
 
 export class S3Service {
     static s3Client = new S3Client({
-        region: process.env.AWS_REGION || 'us-east-2',
+        region: process.env.AWS_REGION || 'us-east-1',
         // Use default credentials from AWS SDK (IAM role, env vars, etc.)
     });
 
