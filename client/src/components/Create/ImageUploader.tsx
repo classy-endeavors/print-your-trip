@@ -30,6 +30,9 @@ const ImageUploader: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const imageRef = useRef<HTMLImageElement>(null);
 
+  const API_URL = import.meta.env.VITE_API_URL;
+  console.log(API_URL)
+
   const handleImageUpload = async (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
@@ -122,7 +125,7 @@ const ImageUploader: React.FC = () => {
       console.log("FormData created with image");
 
       console.log("Making upload request to /api/upload...");
-      const uploadResponse = await axios.post("/api/upload", formData, {
+      const uploadResponse = await axios.post(`${API_URL + '/upload'}`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -154,7 +157,7 @@ const ImageUploader: React.FC = () => {
     setError(null);
     try {
       console.log("Making convert request to /api/convert...");
-      const response = await axios.post("/api/convert", {
+      const response = await axios.post(`${API_URL + '/convert'}`, {
         s3Path: uploadedS3Path,
       });
 
