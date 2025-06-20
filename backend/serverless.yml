@@ -20,8 +20,8 @@ resources:
 
 provider:
   name: aws
-  runtime: nodejs16.x
-  region: eu-north-1
+  runtime: nodejs18.x
+  region: ${env:AWS_REGION}
   stage: ${self:custom.stage}
   iam:
     role:
@@ -38,12 +38,24 @@ provider:
   timeout: 50
 
 functions:
-  login:
-    handler: src/handlers/auth.login
+  uploadImage:
+    handler: src/handlers/image.upload
     events:
       - http:
-          path: /login
+          path: /upload
           method: post
           cors:
             origin: "*"
             allowCredentials: true
+    timeout: 30
+
+  convertToPDF:
+    handler: src/handlers/image.convert
+    events:
+      - http:
+          path: /convert
+          method: post
+          cors:
+            origin: "*"
+            allowCredentials: true
+    timeout: 30
