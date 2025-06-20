@@ -93,7 +93,10 @@ export default function HowItWorksComponent() {
         </div>
         {/* CTA Button */}
         <div className="mt-6 mb-4 flex w-full items-center justify-center">
-          <Button className="rounded-full px-8 py-3 text-lg" onClick={() => navigate("/create")}>
+          <Button
+            className="rounded-full px-8 py-3 text-lg"
+            onClick={() => navigate("/create")}
+          >
             Start Sending!
           </Button>
         </div>
