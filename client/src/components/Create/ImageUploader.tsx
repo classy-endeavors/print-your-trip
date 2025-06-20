@@ -11,6 +11,7 @@ import api from "../../lib/api";
 import Button from "../Button";
 import LoadingBar from "./LoadingBar";
 import Check from "../icons/Check";
+import placeholder from "../../assets/hero-z-0.jpg";
 
 type View =
   | "upload"
@@ -66,7 +67,7 @@ const ImageUploader: React.FC = () => {
       setView("convertingHeic");
       try {
         processedFile = await convertHeicToJpeg(file);
-      } catch (err) {
+      } catch {
         setError("Failed to convert HEIC. Please try a different file type.");
         setView("error");
         return;
@@ -210,7 +211,7 @@ const ImageUploader: React.FC = () => {
               onClick={triggerFileUpload}
             >
               <img
-                src="/src/assets/hero-z-0.jpg"
+                src={placeholder}
                 alt="Safe area placeholder"
                 className="rounded-lg"
               />
