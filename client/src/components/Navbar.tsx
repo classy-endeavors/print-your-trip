@@ -68,15 +68,19 @@ const Navbar: React.FC<NavbarProps> = ({ variant }) => {
       <nav className="fixed z-50 w-full">
         <div className="relative m-5 flex justify-between rounded-full p-5 shadow-md md:shadow-none">
           <a href="/">
-            <ChevronLeft className="p-3 h-15 w-15 cursor-pointer rounded-full text-gray-600 md:shadow-2xl md:shadow-black" />
+            <ChevronLeft className="h-15 w-15 cursor-pointer rounded-full p-3 text-gray-600 md:shadow-2xl md:shadow-black" />
           </a>
-          <div className="flex flex-col gap-2 flex-1 justify-center items-center">
+          <div className="flex flex-1 flex-col items-center justify-center gap-2">
             <img
               className="mr-2 max-h-[3rem] max-w-[10rem]"
               src={logoExt}
               alt="logo-ext"
             />
-            <img className="max-w-[10rem]" src={logoTagline} alt="logo-tagline" />
+            <img
+              className="max-w-[10rem]"
+              src={logoTagline}
+              alt="logo-tagline"
+            />
           </div>
         </div>
       </nav>
@@ -150,7 +154,9 @@ const Navbar: React.FC<NavbarProps> = ({ variant }) => {
                 onClick={() => setMobileOpen(false)}
               />
             ))}
-            <Button onClick={() => navigate("/create")}>Create My Postcard</Button>
+            <Button onClick={() => navigate("/create")}>
+              Create My Postcard
+            </Button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -158,4 +164,4 @@ const Navbar: React.FC<NavbarProps> = ({ variant }) => {
   );
 };
 
-export default Navbar; 
+export default Navbar;
