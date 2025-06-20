@@ -98,7 +98,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant }) => {
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 120, damping: 12 }}
-      className="fixed top-6 left-1/2 z-50 flex w-[97vw] max-w-5xl -translate-x-1/2 items-center justify-between rounded-full bg-[#ede9dd] px-8 py-4 font-league-spartan shadow-[0_4px_24px_0_rgba(0,0,0,0.18)]"
+      className="fixed top-6 left-1/2 z-50 flex w-[97vw] max-w-5xl -translate-x-1/2 items-center justify-between rounded-full bg-background px-8 py-4 font-league-spartan shadow-[0_4px_24px_0_rgba(0,0,0,0.18)]"
     >
       {/* Logo and Tagline */}
       <div className="hidden min-w-[210px] flex-col items-start justify-center pl-2 md:flex">
@@ -126,7 +126,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant }) => {
       {/* Create My Postcard Button */}
       <div className="hidden md:flex">
         <Button
-          className="rounded-full bg-[#6b8c6a] px-7 py-2 text-lg font-semibold text-white shadow-none transition-colors duration-150 hover:bg-[#5e7c5d]"
+          className="rounded-full px-7 py-2 text-lg font-semibold text-white shadow-none transition-colors duration-150"
           onClick={() => navigate("/create")}
         >
           Create My Postcard
@@ -172,7 +172,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant }) => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ type: "spring", stiffness: 120, damping: 14 }}
-            className="absolute top-14 left-1/2 flex w-[90vw] max-w-xs -translate-x-1/2 flex-col items-center space-y-4 rounded-2xl bg-[#ede9dd] p-6 shadow-xl md:hidden"
+            className="absolute top-14 left-1/2 flex w-[90vw] max-w-xs -translate-x-1/2 flex-col items-center space-y-4 rounded-2xl bg-background p-6 shadow-xl md:hidden"
           >
             {navItems.map((item) => (
               <Link
@@ -185,7 +185,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant }) => {
               </Link>
             ))}
             <Button
-              className="rounded-full bg-[#6b8c6a] px-7 py-2 text-lg font-semibold text-white shadow-none transition-colors duration-150 hover:bg-[#5e7c5d]"
+              className="rounded-full px-7 py-2 text-lg font-semibold text-white shadow-none transition-colors duration-150"
               onClick={() => {
                 setMobileOpen(false);
                 navigate("/create");
