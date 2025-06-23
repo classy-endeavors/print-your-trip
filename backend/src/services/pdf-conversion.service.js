@@ -14,14 +14,14 @@ export class PDFConversionService {
                     fit: 'cover',
                     position: 'center'
                 })
-                // Apply color profile correction and enhancement for better print output
+                // Apply aggressive color profile correction for much lighter output
                 .modulate({
-                    brightness: 1.05,  // Slight brightness boost to compensate for CMYK conversion
-                    saturation: 1.15,  // Increase saturation as CMYK tends to be less vibrant
+                    brightness: 1.15,  // Reduced from 1.25 to be less aggressive
+                    saturation: 1.2,   // Reduced from 1.3
                     hue: 0
                 })
-                // Enhance contrast slightly for better print quality
-                .linear(1.1, -5)  // Slight contrast boost
+                // More aggressive shadow lifting to preserve dark areas
+                .linear(0.85, 25)  // Reduced contrast more and increased brightness offset
                 .jpeg({ 
                     quality: 100,
                     mozjpeg: true  // Use mozjpeg for better compression
@@ -53,10 +53,12 @@ export class PDFConversionService {
                 // Convert back to RGB with color correction for print simulation
                 const printRgb = this.cmykToRGBImproved(cmyk.c, cmyk.m, cmyk.y, cmyk.k);
                 
-                // Apply slight gamma correction for better visual match
-                optimizedRgbData[i] = Math.min(255, Math.max(0, Math.round(Math.pow(printRgb.r, 0.9) * 255)));
-                optimizedRgbData[i + 1] = Math.min(255, Math.max(0, Math.round(Math.pow(printRgb.g, 0.9) * 255)));
-                optimizedRgbData[i + 2] = Math.min(255, Math.max(0, Math.round(Math.pow(printRgb.b, 0.9) * 255)));
+                // Apply lighter gamma correction to prevent dark areas from becoming too dark
+                // Higher gamma values (>1.0) make dark areas lighter
+                const gamma = 1.15; // Changed from 0.9 to 1.15 to lighten dark areas
+                optimizedRgbData[i] = Math.min(255, Math.max(0, Math.round(Math.pow(printRgb.r, gamma) * 255)));
+                optimizedRgbData[i + 1] = Math.min(255, Math.max(0, Math.round(Math.pow(printRgb.g, gamma) * 255)));
+                optimizedRgbData[i + 2] = Math.min(255, Math.max(0, Math.round(Math.pow(printRgb.b, gamma) * 255)));
             }
 
             console.log(`CMYK optimization completed for ${cmykPixels.length} pixels`);
@@ -154,8 +156,25 @@ export class PDFConversionService {
         let m = 1 - g;
         let y = 1 - b;
 
-        // Improved black generation - use GCR (Gray Component Replacement)
-        const k = Math.min(c, m, y) * 0.8; // Use 80% of minimum for better detail retention
+        // Improved black generation - use adaptive approach based on darkness
+        const minCMY = Math.min(c, m, y);
+        const maxRGB = Math.max(r, g, b);
+        
+        // For darker areas (low maxRGB), use even less black generation
+        // For lighter areas, can use more black for efficiency
+        let blackMultiplier;
+        if (maxRGB < 0.3) {
+            // Very dark areas - minimal black generation to preserve detail
+            blackMultiplier = 0.15;
+        } else if (maxRGB < 0.6) {
+            // Medium areas - moderate black generation
+            blackMultiplier = 0.25;
+        } else {
+            // Light areas - can use more black
+            blackMultiplier = 0.35;
+        }
+        
+        const k = minCMY * blackMultiplier;
         
         // Adjust CMY values based on black generation
         if (k < 1) {
