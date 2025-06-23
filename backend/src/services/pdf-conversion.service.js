@@ -1,6 +1,5 @@
 import PDFDocument from 'pdfkit';
 import sharp from 'sharp';
-import convert from 'color-convert';
 
 export class PDFConversionService {
     static async convertToCMYK(imageBuffer) {
@@ -10,63 +9,80 @@ export class PDFConversionService {
         try {
             // First, ensure the image is cropped to 1800x1200 (4x6 inches at 300 DPI)
             console.log('Resizing and cropping image to 1800x1200...');
-            const resizedImage = await sharp(imageBuffer)
+            const processedImage = await sharp(imageBuffer)
                 .resize(1800, 1200, {
                     fit: 'cover',
                     position: 'center'
                 })
-                .jpeg({ quality: 100 })
+                // Apply color profile correction and enhancement for better print output
+                .modulate({
+                    brightness: 1.05,  // Slight brightness boost to compensate for CMYK conversion
+                    saturation: 1.15,  // Increase saturation as CMYK tends to be less vibrant
+                    hue: 0
+                })
+                // Enhance contrast slightly for better print quality
+                .linear(1.1, -5)  // Slight contrast boost
+                .jpeg({ 
+                    quality: 100,
+                    mozjpeg: true  // Use mozjpeg for better compression
+                })
                 .toBuffer();
 
-            console.log('Converting to CMYK color space using color-convert...');
+            console.log('Applying CMYK color space optimization...');
             
-            // Get RGB pixel data from the image
-            const { data: rgbData, info } = await sharp(resizedImage)
+            // Get RGB pixel data from the processed image
+            const { data: rgbData, info } = await sharp(processedImage)
                 .raw()
                 .toBuffer({ resolveWithObject: true });
 
-            console.log(`Processing ${info.width}x${info.height} pixels for CMYK conversion...`);
+            console.log(`Processing ${info.width}x${info.height} pixels for CMYK optimization...`);
 
-            // Convert RGB to CMYK using color-convert (most accurate method)
+            // Convert RGB to CMYK using improved algorithm
             const cmykPixels = [];
-            const printReadyRgbData = new Uint8Array(rgbData.length);
+            const optimizedRgbData = new Uint8Array(rgbData.length);
 
             for (let i = 0; i < rgbData.length; i += 3) {
-                const r = rgbData[i];
-                const g = rgbData[i + 1]; 
-                const b = rgbData[i + 2];
+                const r = rgbData[i] / 255;
+                const g = rgbData[i + 1] / 255;
+                const b = rgbData[i + 2] / 255;
                 
-                // Convert RGB to CMYK using color-convert (accurate conversion)
-                const [c, m, y, k] = convert.rgb.cmyk([r, g, b]);
+                // Improved CMYK conversion algorithm
+                const cmyk = this.rgbToCMYKImproved(r, g, b);
+                cmykPixels.push(cmyk);
                 
-                // Store CMYK values for statistics
-                cmykPixels.push({ c, m, y, k });
+                // Convert back to RGB with color correction for print simulation
+                const printRgb = this.cmykToRGBImproved(cmyk.c, cmyk.m, cmyk.y, cmyk.k);
                 
-                // Convert CMYK back to RGB using color-convert for print accuracy
-                // This gives us the most accurate representation of how the CMYK will look when printed
-                const [printR, printG, printB] = convert.cmyk.rgb([c, m, y, k]);
-                
-                // Store the print-ready RGB values
-                printReadyRgbData[i] = printR;
-                printReadyRgbData[i + 1] = printG;
-                printReadyRgbData[i + 2] = printB;
+                // Apply slight gamma correction for better visual match
+                optimizedRgbData[i] = Math.min(255, Math.max(0, Math.round(Math.pow(printRgb.r, 0.9) * 255)));
+                optimizedRgbData[i + 1] = Math.min(255, Math.max(0, Math.round(Math.pow(printRgb.g, 0.9) * 255)));
+                optimizedRgbData[i + 2] = Math.min(255, Math.max(0, Math.round(Math.pow(printRgb.b, 0.9) * 255)));
             }
 
-            console.log(`CMYK conversion completed for ${cmykPixels.length} pixels`);
+            console.log(`CMYK optimization completed for ${cmykPixels.length} pixels`);
             
             // Log CMYK statistics for verification
             this.logCMYKStatistics(cmykPixels);
 
-            // Create print-ready image buffer from the CMYK-optimized RGB data
+            // Create the final print-ready image
             console.log('Creating print-ready image buffer...');
-            const printReadyImage = await sharp(printReadyRgbData, {
+            const printReadyImage = await sharp(optimizedRgbData, {
                 raw: {
                     width: info.width,
                     height: info.height,
                     channels: 3
                 }
             })
-            .jpeg({ quality: 100 })
+            // Apply final sharpening for print quality
+            .sharpen({
+                sigma: 0.5,
+                m1: 0.5,
+                m2: 2.0
+            })
+            .jpeg({ 
+                quality: 100,
+                mozjpeg: true
+            })
             .toBuffer();
 
             console.log(`Print-ready image buffer size: ${printReadyImage.length}`);
@@ -105,7 +121,7 @@ export class PDFConversionService {
             });
 
             // Embed the print-ready image at exact size
-            console.log('Embedding print-ready CMYK image in PDF...');
+            console.log('Embedding print-optimized image in PDF...');
             doc.image(printReadyImage, 0, 0, {
                 width: width,
                 height: height,
@@ -124,6 +140,60 @@ export class PDFConversionService {
             console.error('Error details:', error);
             throw error;
         }
+    }
+
+    // Improved RGB to CMYK conversion with better black generation
+    static rgbToCMYKImproved(r, g, b) {
+        // Ensure values are in 0-1 range
+        r = Math.max(0, Math.min(1, r));
+        g = Math.max(0, Math.min(1, g));
+        b = Math.max(0, Math.min(1, b));
+
+        // Calculate initial CMY values
+        let c = 1 - r;
+        let m = 1 - g;
+        let y = 1 - b;
+
+        // Improved black generation - use GCR (Gray Component Replacement)
+        const k = Math.min(c, m, y) * 0.8; // Use 80% of minimum for better detail retention
+        
+        // Adjust CMY values based on black generation
+        if (k < 1) {
+            const adjustment = 1 - k;
+            c = Math.max(0, (c - k) / adjustment);
+            m = Math.max(0, (m - k) / adjustment);
+            y = Math.max(0, (y - k) / adjustment);
+        } else {
+            c = m = y = 0;
+        }
+
+        return {
+            c: Math.round(c * 100),
+            m: Math.round(m * 100),
+            y: Math.round(y * 100),
+            k: Math.round(k * 100)
+        };
+    }
+
+    // Improved CMYK to RGB conversion with better color matching
+    static cmykToRGBImproved(c, m, y, k) {
+        // Convert percentages to 0-1 range
+        c = c / 100;
+        m = m / 100;
+        y = y / 100;
+        k = k / 100;
+
+        // Improved conversion formula with color correction
+        const r = (1 - c) * (1 - k);
+        const g = (1 - m) * (1 - k);
+        const b = (1 - y) * (1 - k);
+
+        // Apply slight color correction for better visual match
+        return {
+            r: Math.max(0, Math.min(1, r * 1.02)), // Slight red boost
+            g: Math.max(0, Math.min(1, g * 1.01)), // Slight green boost
+            b: Math.max(0, Math.min(1, b * 1.03))  // Slight blue boost
+        };
     }
 
     static logCMYKStatistics(cmykPixels) {
@@ -167,6 +237,10 @@ export class PDFConversionService {
         console.log(`Yellow  (Y) - Min: ${stats.y.min.toFixed(1)}% | Max: ${stats.y.max.toFixed(1)}% | Avg: ${(stats.y.total / pixelCount).toFixed(1)}%`);
         console.log(`Black   (K) - Min: ${stats.k.min.toFixed(1)}% | Max: ${stats.k.max.toFixed(1)}% | Avg: ${(stats.k.total / pixelCount).toFixed(1)}%`);
         
+        // Calculate total ink coverage
+        const totalInkCoverage = cmykPixels.reduce((sum, { c, m, y, k }) => sum + c + m + y + k, 0) / pixelCount;
+        console.log(`Average total ink coverage: ${totalInkCoverage.toFixed(1)}%`);
+        
         // Additional print insights
         const highCyanPixels = cmykPixels.filter(p => p.c > 75).length;
         const highMagentaPixels = cmykPixels.filter(p => p.m > 75).length;
@@ -178,24 +252,36 @@ export class PDFConversionService {
         console.log(`High Magenta pixels (>75%): ${highMagentaPixels} (${(highMagentaPixels/pixelCount*100).toFixed(2)}%)`);
         console.log(`High Yellow pixels (>75%): ${highYellowPixels} (${(highYellowPixels/pixelCount*100).toFixed(2)}%)`);
         console.log(`High Black pixels (>75%): ${highBlackPixels} (${(highBlackPixels/pixelCount*100).toFixed(2)}%)`);
+        
+        // Warn about potential print issues
+        if (totalInkCoverage > 280) {
+            console.log('⚠️  WARNING: High total ink coverage detected. May cause printing issues.');
+        }
     }
 
-    // Utility method to get raw CMYK data if needed for external processing
+    // Enhanced utility method to get raw CMYK data
     static async getCMYKData(imageBuffer) {
         const { data: rgbData, info } = await sharp(imageBuffer)
             .resize(1800, 1200, { fit: 'cover', position: 'center' })
+            .modulate({
+                brightness: 1.05,
+                saturation: 1.15
+            })
             .raw()
             .toBuffer({ resolveWithObject: true });
 
         const cmykData = [];
         
         for (let i = 0; i < rgbData.length; i += 3) {
-            const r = rgbData[i];
-            const g = rgbData[i + 1];
-            const b = rgbData[i + 2];
+            const r = rgbData[i] / 255;
+            const g = rgbData[i + 1] / 255;
+            const b = rgbData[i + 2] / 255;
             
-            const [c, m, y, k] = convert.rgb.cmyk([r, g, b]);
-            cmykData.push({ c, m, y, k, originalRgb: [r, g, b] });
+            const cmyk = this.rgbToCMYKImproved(r, g, b);
+            cmykData.push({ 
+                ...cmyk, 
+                originalRgb: [rgbData[i], rgbData[i + 1], rgbData[i + 2]] 
+            });
         }
 
         return {
@@ -203,5 +289,45 @@ export class PDFConversionService {
             height: info.height,
             cmykData
         };
+    }
+
+    // Alternative method that preserves original RGB values for comparison
+    static async convertToRGB(imageBuffer) {
+        console.log('=== RGB CONVERSION (No CMYK simulation) ===');
+        
+        const processedImage = await sharp(imageBuffer)
+            .resize(1800, 1200, {
+                fit: 'cover',
+                position: 'center'
+            })
+            .jpeg({ quality: 100 })
+            .toBuffer();
+
+        const metadata = await sharp(processedImage).metadata();
+        const width = metadata.width || 1800;
+        const height = metadata.height || 1200;
+
+        const doc = new PDFDocument({
+            size: [width, height],
+            autoFirstPage: false,
+            margins: { top: 0, bottom: 0, left: 0, right: 0 }
+        });
+
+        const chunks = [];
+        doc.on('data', (chunk) => chunks.push(chunk));
+
+        const pdfPromise = new Promise((resolve) => {
+            doc.on('end', () => resolve(Buffer.concat(chunks)));
+        });
+
+        doc.addPage({
+            size: [width, height],
+            margins: { top: 0, bottom: 0, left: 0, right: 0 }
+        });
+
+        doc.image(processedImage, 0, 0, { width, height });
+        doc.end();
+
+        return await pdfPromise;
     }
 }
